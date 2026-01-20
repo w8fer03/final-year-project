@@ -5,6 +5,7 @@ Mục tiêu của dự án là xây dựng một công cụ tự động thu th�
 -   Tên người dùng.
 -   Số sao đánh giá.
 -   Nội dung bình luận.
+-   Thời gian bình luận.
 -   Phân loại hàng hóa.
 ## 2. Tại sao không sử dụng các phương pháp phổ biến khác?
 Trước khi đi đến giải pháp hiện tại, chúng ta xem xét và loại bỏ 3 phương pháp thông thường vì các rào cản kỹ thuật từ hệ thống bảo mật của Shopee:
