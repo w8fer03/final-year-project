@@ -13,16 +13,16 @@ Crawling Shopee reviews is notoriously challenging due to their advanced Anti-bo
 Below is the journey of how those hurdles were systematically resolved:
 
 ### 🔴 Phase 1: V1 - Selenium DOM Scraping
-- **Directory**: [`v1_selenium_dom/`](file:///c:/Users/Ku%20Bach/Desktop/Code/scrape_shopee/v1_selenium_dom)
+- **Directory**: [`v1_selenium_dom/`](v1_selenium_dom)
 - **Concept**: Bypasses the initial anti-bot system by attaching Selenium to a **real, active Google Chrome browser** in debugging mode (`--remote-debugging-port=9222`). Once attached, it scrolls the page to trigger lazy loading and scrapes reviews directly from the HTML DOM tree using CSS selectors.
 - **Limitation**: Brittle (breaks when Shopee modifies class names) and slow (must paginate manually in the browser UI, loading only 6 comments per page click).
-- **Read More**: Detailed guide in Vietnamese at [README_v1.md](file:///c:/Users/Ku%20Bach/Desktop/Code/scrape_shopee/v1_selenium_dom/README_v1.md).
+- **Read More**: Detailed guide in Vietnamese at [README_v1.md](v1_selenium_dom/README_v1.md).
 
 ### 🟢 Phase 2: V2 - Hybrid API Injection (Recommended)
-- **Directory**: [`v2_api_injection/`](file:///c:/Users/Ku%20Bach/Desktop/Code/scrape_shopee/v2_api_injection)
+- **Directory**: [`v2_api_injection/`](v2_api_injection)
 - **Concept**: A breakthrough optimization. It still connects to the debugged Chrome instance, but instead of clicking elements and parsing HTML, it **injects asynchronous JavaScript fetches** directly into the browser context. Because the requests are made *inside* the authenticated browser under the `shopee.vn` origin, they seamlessly inherit all valid cookies, security tokens, and API signatures.
 - **Advantage**: Bypasses the 403 blocks effortlessly. It is 100x faster, retrieves up to 59 structured reviews in a single call, and is completely immune to CSS UI updates.
-- **Read More**: Detailed guide in English at [README_v2.md](file:///c:/Users/Ku%20Bach/Desktop/Code/scrape_shopee/v2_api_injection/README_v2.md).
+- **Read More**: Detailed guide in English at [README_v2.md](v2_api_injection/README_v2.md).
 
 ---
 
@@ -32,6 +32,7 @@ Below is the journey of how those hurdles were systematically resolved:
 | :--- | :--- | :--- |
 | **Data Fetch Mechanism** | Parsing UI HTML/DOM elements | Direct JSON fetch from Internal API |
 | **Speed & Throughput** | ~2 reviews / sec (6 reviews per page click) | **~40+ reviews / sec** (Up to 59 reviews per API call) |
+| **Data Depth & Insights** | **Basic** (Only visible front-end texts: user, overall star rating, comment text, variant name, and date). | **Extremely Rich** (Extracts deeper backend metadata invisible to the DOM, including granular sub-ratings for product/seller/delivery, quick feedback tags, review helpfulness like counts, attachment media counters, repeat purchase indicators, and unique IDs). |
 | **Maintenance Level** | **High** (Breaks whenever CSS class names change) | **Very Low** (Backend API structures are highly stable) |
 | **Anti-bot Resilience** | Medium (Frequent UI interactions might trigger bot verification) | **Extremely High** (Simulates pure backend network traffic from a real browser) |
 | **Data Integrity** | Manual string cleaning, prone to selector errors | 100% clean, raw JSON output straight from Shopee's database |
@@ -67,7 +68,7 @@ To run the highly optimized Version 2 immediately:
    ```bash
    pip install selenium pandas
    ```
-3. **Configure the target product** in [`shopee_crawler_v2_api.py`](file:///c:/Users/Ku%20Bach/Desktop/Code/scrape_shopee/v2_api_injection/shopee_crawler_v2_api.py):
+3. **Configure the target product** in [`shopee_crawler_v2_api.py`](v2_api_injection/shopee_crawler_v2_api.py):
    ```python
    PRODUCT_URL = "https://shopee.vn/your-product-link"
    ```

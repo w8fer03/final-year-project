@@ -62,7 +62,7 @@ Before running the script, you must start a Chrome session in debugging mode. Th
 
 ### Step 2: Configure the Target Product
 
-Open [shopee_crawler_v2_api.py](file:///c:/Users/Ku%20Bach/Desktop/Code/scrape_shopee/v2_api_injection/shopee_crawler_v2_api.py) and update the `PRODUCT_URL` variable in the `main()` function with the Shopee product link you wish to crawl:
+Open [shopee_crawler_v2_api.py](shopee_crawler_v2_api.py) and update the `PRODUCT_URL` variable in the `main()` function with the Shopee product link you wish to crawl:
 
 ```python
 PRODUCT_URL = "https://shopee.vn/product-link-here"
@@ -91,3 +91,29 @@ python shopee_crawler_v2_api.py
 
 - **Soft Delays**: The script implements `time.sleep(1.5)` between API requests. **Do not remove this delay.** Sending requests too rapidly inside the browser context can trigger internal Shopee rate limiters, temporarily hiding reviews.
 - **Context Preservation**: The script does `NOT` call `driver.quit()` at the end, ensuring that your main Chrome session stays open and you don't lose your working tabs.
+
+---
+
+## 📊 Exported CSV Schema
+
+Once the crawling is complete, the script formats and exports the reviews into `shopee_reviews_api.csv` using this rich schema:
+
+| Column | Data Type | Description |
+| :--- | :--- | :--- |
+| `user` | String | Buyer's masked username (e.g., `thbtrane`, `n*****5`) |
+| `userid` | Integer | Unique Shopee user identifier |
+| `stars` | Integer | Overall rating star count (1 to 5 stars) |
+| `product_quality` | Integer | Granular rating for product quality (1 to 5 stars) |
+| `seller_service` | Integer | Granular rating for seller customer service (1 to 5 stars) |
+| `delivery_service`| Integer | Granular rating for delivery/logistics (1 to 5 stars) |
+| `comment` | String | Cleaned text comment with newlines stripped |
+| `template_tags` | String | Comma-separated list of quick review tags selected by the buyer |
+| `datetime` | Datetime | Full timestamp of the review (`YYYY-MM-DD HH:MM:SS`) |
+| `date` | Date | Date of the review (`YYYY-MM-DD`) |
+| `time` | Time | Time of the review (`HH:MM:SS`) |
+| `variant` | String | Name of the specific variant/model purchased |
+| `like_count` | Integer | Total helpful votes/likes received |
+| `image_count` | Integer | Count of images attached by the buyer |
+| `video_count` | Integer | Count of videos attached by the buyer |
+| `is_repeated` | Boolean | `True` if this user is a repeat buyer at this shop |
+| `cmtid` | Integer | Unique comment ID (perfect as a database Primary Key to prevent duplicates) |
