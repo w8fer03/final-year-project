@@ -89,24 +89,42 @@ def collect_reviews_api(driver, shop_id, item_id, total_to_crawl=100):
             variants = []
             product_items = rate.get("product_items", [])
             for item in product_items:
-                val = item.get("value")
+                val = item.get("model_name") or item.get("value") or item.get("options")
                 if val:
-                    variants.append(val)
+                    if isinstance(val, list):
+                        variants.extend([str(v) for v in val if v])
+                    else:
+                        variants.append(str(val))
             variant_str = ", ".join(variants)
             
-            # Convert Unix timestamp to formatted string
+            # Convert Unix timestamp to formatted date and time
             ctime = rate.get("ctime", 0)
-            formatted_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(ctime))
+            local_time = time.localtime(ctime) if ctime else None
+            datetime_str = time.strftime('%Y-%m-%d %H:%M:%S', local_time) if local_time else ""
             
-            info_str = f"{formatted_time}"
-            if variant_str:
-                info_str += f" | Phan loai hang: {variant_str}"
-                
+            # Extract detailed rating categories if available
+            detailed = rate.get("detailed_rating") or {}
+            
+            # Extract template tags as a comma-separated string
+            tags = rate.get("template_tags") or []
+            tags_str = ", ".join(tags) if tags else ""
+            
             all_reviews.append({
                 "user": author,
+                "userid": rate.get("userid"),
                 "stars": stars,
+                "product_quality": detailed.get("product_quality"),
+                "seller_service": detailed.get("seller_service"),
+                "delivery_service": detailed.get("delivery_service"),
                 "comment": comment,
-                "info": info_str
+                "template_tags": tags_str,
+                "datetime": datetime_str,
+                "variant": variant_str if variant_str else "",
+                "like_count": rate.get("like_count", 0),
+                "image_count": len(rate.get("images") or []),
+                "video_count": len(rate.get("videos") or []),
+                "is_repeated": rate.get("is_repeated_purchase", False),
+                "cmtid": rate.get("cmtid")
             })
             
         print(f"[+] Successfully fetched {len(all_reviews)} reviews.")
@@ -122,7 +140,7 @@ def collect_reviews_api(driver, shop_id, item_id, total_to_crawl=100):
     return all_reviews[:total_to_crawl]
 
 def main():
-    PRODUCT_URL = "https://shopee.vn/product/737801055/21742804545"
+    PRODUCT_URL = "https://shopee.vn/%C4%90%C3%A8n-Treo-M%C3%A0n-H%C3%ACnh-C%E1%BA%A3m-%E1%BB%A8ng-B%E1%BA%A3o-V%E1%BB%87-M%E1%BA%AFt-%C4%90%C3%A8n-M%C3%A0n-H%C3%ACnh-PC-3-Ch%E1%BA%BF-%C4%90%E1%BB%99-S%C3%A1ng-C%E1%BA%A3m-%E1%BB%A8ng-%C4%90i%E1%BB%81u-Khi%E1%BB%83n-T%E1%BB%AB-Xa-i.1644821661.57200786209?extraParams=%7B%22display_model_id%22%3A350070001933%2C%22model_selection_logic%22%3A3%7D&sp_atk=55d84077-d99a-4456-a494-864c8ffaecb3&xptdk=55d84077-d99a-4456-a494-864c8ffaecb3"
     
     # 1. Extract IDs
     shop_id, item_id = extract_ids_from_url(PRODUCT_URL)
@@ -150,8 +168,7 @@ def main():
             time.sleep(2)
             
         # 3. Collect reviews
-        # Crawling 150 reviews (takes ~3 seconds, equivalent to 25 page loads in standard Selenium)
-        data = collect_reviews_api(driver, shop_id, item_id, total_to_crawl=500)
+        data = collect_reviews_api(driver, shop_id, item_id, total_to_crawl=50)
         
         if data:
             df = pd.DataFrame(data)
