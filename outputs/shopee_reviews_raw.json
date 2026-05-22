@@ -1,0 +1,350 @@
+{
+    "data": {
+        "browsing_ui": "",
+        "chatbot_pass_through_data": "",
+        "chatbot_track_id": "",
+        "current_review_tab": 0,
+        "downgrade_switch": false,
+        "enable_buyer_gallery_media": true,
+        "fe_component_toggles": {},
+        "fe_review_summary": {},
+        "has_more": true,
+        "hide_shop_rating": false,
+        "is_show_product_ratings_section": true,
+        "is_show_similar_ratings_section": false,
+        "is_sip_item": true,
+        "item_rating_count": 2259,
+        "item_rating_star": 4.902611775121735,
+        "item_rating_summary": {
+            "rating_count": [
+                15,
+                7,
+                30,
+                79,
+                2128
+            ],
+            "rating_total": 2259,
+            "rcount_folded": 0,
+            "rcount_local_review": 1620,
+            "rcount_overall_fit_fit": 0,
+            "rcount_overall_fit_large": 0,
+            "rcount_overall_fit_small": 0,
+            "rcount_oversea_review": 639,
+            "rcount_repeat_purchase": 0,
+            "rcount_with_context": 800,
+            "rcount_with_image": 566,
+            "rcount_with_media": 608,
+            "show_size_fitting": false
+        },
+        "original_review_summary": {},
+        "purchase_bar_abt": "bucket_a",
+        "ratings": [
+            {
+                "anonymous": false,
+                "author_portrait": "vn-11134233-81ztc-mno0id1zjpqda4",
+                "author_username": "thbtrane",
+                "cmtid": 12138988005,
+                "comment": "shop quốc tế nhưng mà giao cũng nhanh chóng lắm,kiểu chuẩn bị hàng đồ rất nhanh nhe,đồ giao đầy đủ siêu ưng luôn á xinh vãiii lun rcm nên mua nha mọi ngườiiii 💯💯",
+                "ctime": 1690823516,
+                "detailed_rating": {
+                    "delivery_service": 5,
+                    "product_quality": 5,
+                    "seller_service": 5
+                },
+                "display_variation_filter": true,
+                "editable": 0,
+                "editable_date": 1693415516,
+                "exclude_scoring_due_low_logistic": false,
+                "filter": 7,
+                "has_template_tag": false,
+                "image_data": [
+                    {
+                        "cover_image_id": "vn-11134103-7qukw-ljvl8rb1q6te72",
+                        "image_id": "vn-11134103-7qukw-ljvl8rb1q6te72",
+                        "score": 0
+                    },
+                    {
+                        "cover_image_id": "vn-11134103-7qukw-ljvl8rb1aqkiad",
+                        "image_id": "vn-11134103-7qukw-ljvl8rb1aqkiad",
+                        "score": 0
+                    }
+                ],
+                "images": [
+                    "vn-11134103-7qukw-ljvl8rb1q6te72",
+                    "vn-11134103-7qukw-ljvl8rb1aqkiad"
+                ],
+                "is_half_pdp": false,
+                "is_hidden": false,
+                "is_normal_item": true,
+                "is_repeated_purchase": false,
+                "is_super_review": false,
+                "itemid": 21181281963,
+                "key_media": {
+                    "key_media_code": 0,
+                    "key_media_id": ""
+                },
+                "like_count": 14,
+                "liked": false,
+                "medias": [
+                    {
+                        "video": {
+                            "cover": "https://down-zl-vn.img.susercontent.com/vn-11110103-23080-eqrgrkxiv6tv32",
+                            "cover_image_id": "sg-11134206-7qvf4-ljxqhavxom4lce",
+                            "duration": 12000,
+                            "highlight": {
+                                "cover": "https://down-ws-vn.vod.susercontent.com/c3/98934353/160/A3oyOXsvABwwttImIRQBCQAn.jpg",
+                                "cover_image_id": "",
+                                "duration": 3079,
+                                "id": "sg-11110160-6jrof-ljxqilyotyfr69",
+                                "mms_ext": "{\"vid\":\"sg-11110160-6jrof-ljxqilyotyfr69\",\"biz\":103,\"duration\":3079,\"create_time\":1690924615,\"update_time\":1690924616,\"serviceID\":6,\"cover\":\"https://down-ws-vn.vod.susercontent.com/c3/98934353/160/A3oyOXsvABwwttImIRQBCQAn.jpg\",\"cover_list\":[],\"formats\":[],\"default_format\":{\"format\":600001,\"defn\":\"ORI\",\"profile\":\"MP4\",\"path\":\"\",\"url\":\"https://down-ws-vn.vod.susercontent.com/c3/98934353/160/A3oyOVEsAIAvttImIRUBBwAn.mp4\",\"width\":250,\"height\":250,\"bitrate\":363906,\"abitrate\":0,\"size\":141879,\"fps\":25,\"duration\":3079,\"update_time\":1690924616,\"codec\":\"H264\"},\"extend_formats\":{\"H265\":[{\"format\":1600305,\"defn\":\"V270P\",\"profile\":\"MP4\",\"path\":\"api/v4/11110160/mms/sg-11110160-6jrof-ljxqilyotyfr69.16003051690953421.mp4\",\"url\":\"https://down-ws-vn.vod.susercontent.com/api/v4/11110160/mms/sg-11110160-6jrof-ljxqilyotyfr69.16003051690953421.mp4\",\"width\":250,\"height\":250,\"bitrate\":193644,\"abitrate\":0,\"size\":77936,\"fps\":25.32895,\"duration\":3039,\"update_time\":1690924619,\"codec\":\"H265\"}]},\"ab_test\":\"\"}",
+                                "score": 0,
+                                "url": "https://down-ws-vn.vod.susercontent.com/c3/98934353/160/A3oyOVEsAIAvttImIRUBBwAn.mp4",
+                                "video_tier": 0
+                            },
+                            "id": "vn-11110103-6jrnn-ljvl8ksktu6a1f",
+                            "mms_ext": "{\"vid\":\"vn-11110103-6jrnn-ljvl8ksktu6a1f\",\"biz\":103,\"duration\":12000,\"create_time\":1690823476,\"update_time\":1690823478,\"serviceID\":2,\"cover\":\"https://down-zl-vn.img.susercontent.com/vn-11110103-23080-eqrgrkxiv6tv32\",\"cover_list\":[],\"formats\":[{\"format\":1600005,\"defn\":\"V640P\",\"profile\":\"MP4\",\"path\":\"api/v4/11110103/mms/vn-11110103-6jrnn-ljvl8ksktu6a1f.16000051690823478.mp4\",\"url\":\"https://down-tx-vn.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6jrnn-ljvl8ksktu6a1f.16000051690823478.mp4\",\"width\":640,\"height\":360,\"bitrate\":512515,\"abitrate\":96621,\"size\":922369,\"fps\":25.08361,\"duration\":11982,\"update_time\":1690823481,\"codec\":\"H264\"}],\"default_format\":{\"format\":1600323,\"defn\":\"V540P\",\"profile\":\"MP4\",\"path\":\"\",\"url\":\"https://mms.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6jrnn-ljvl8ksktu6a1f.default.mp4\",\"width\":640,\"height\":360,\"bitrate\":413559,\"abitrate\":64742,\"size\":726701,\"fps\":25.08361,\"duration\":11982,\"update_time\":1726498084,\"codec\":\"H264\"},\"extend_formats\":{\"H265\":[{\"format\":1600308,\"defn\":\"V640P\",\"profile\":\"MP4\",\"path\":\"api/v4/11110103/mms/vn-11110103-6jrnn-ljvl8ksktu6a1f.16003081691950323.mp4\",\"url\":\"https://down-tx-vn.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6jrnn-ljvl8ksktu6a1f.16003081691950323.mp4\",\"width\":640,\"height\":360,\"bitrate\":323305,\"abitrate\":128556,\"size\":690103,\"fps\":25.08361,\"duration\":11982,\"update_time\":1691950335,\"codec\":\"H265\"}]},\"ab_test\":\"\"}",
+                            "score": 0,
+                            "url": "https://down-tx-vn.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6jrnn-ljvl8ksktu6a1f.16000051690823478.mp4",
+                            "video_tier": 1
+                        }
+                    },
+                    {
+                        "image": {
+                            "cover_image_id": "vn-11134103-7qukw-ljvl8rb1q6te72",
+                            "image_id": "vn-11134103-7qukw-ljvl8rb1q6te72",
+                            "score": 0
+                        }
+                    },
+                    {
+                        "image": {
+                            "cover_image_id": "vn-11134103-7qukw-ljvl8rb1aqkiad",
+                            "image_id": "vn-11134103-7qukw-ljvl8rb1aqkiad",
+                            "score": 0
+                        }
+                    }
+                ],
+                "mtime": 1773224683,
+                "opt": 2,
+                "orderid": 0,
+                "origin_itemid": 0,
+                "origin_shopid": 0,
+                "original_item_info": {
+                    "image": "cn-11134207-7qukw-lijl6uvcy0za02",
+                    "is_half_pdp": false,
+                    "itemid": 21181281963,
+                    "name": "Set 10-20 Chuông Tròn Nhỏ Màu Kẹo 14 * 17mm Làm Móc Khóa / Điện Thoại diy",
+                    "shopid": 379903869
+                },
+                "overall_fit": 0,
+                "product_items": [
+                    {
+                        "image": "cn-11134207-7qukw-lijl6uvcy0za02",
+                        "is_half_pdp": false,
+                        "itemid": 21181281963,
+                        "model_name": "Trộn màu,20pcs",
+                        "modelid": 214393124873,
+                        "name": "Set 10-20 Chuông Tròn Nhỏ Màu Kẹo 14 * 17mm Làm Móc Khóa / Điện Thoại diy",
+                        "options": [
+                            "Trộn màu",
+                            "20pcs"
+                        ],
+                        "shopid": 379903869
+                    }
+                ],
+                "rating": 1,
+                "rating_star": 5,
+                "region": "VN",
+                "review_creation_source": 0,
+                "review_type": 0,
+                "shopid": 379903869,
+                "show_reply": true,
+                "show_super_review_tag": false,
+                "sip_info": {
+                    "is_oversea": false,
+                    "origin_region": "vn"
+                },
+                "size_info_abt": "",
+                "status": 2,
+                "submit_time": 0,
+                "super_review_status": 0,
+                "sync_to_social": false,
+                "userid": 356702277,
+                "videos": [
+                    {
+                        "cover": "https://down-zl-vn.img.susercontent.com/vn-11110103-23080-eqrgrkxiv6tv32",
+                        "cover_image_id": "sg-11134206-7qvf4-ljxqhavxom4lce",
+                        "duration": 12000,
+                        "highlight": {
+                            "cover": "https://down-ws-vn.vod.susercontent.com/c3/98934353/160/A3oyOXsvABwwttImIRQBCQAn.jpg",
+                            "cover_image_id": "",
+                            "duration": 3079,
+                            "id": "sg-11110160-6jrof-ljxqilyotyfr69",
+                            "mms_ext": "{\"vid\":\"sg-11110160-6jrof-ljxqilyotyfr69\",\"biz\":103,\"duration\":3079,\"create_time\":1690924615,\"update_time\":1690924616,\"serviceID\":6,\"cover\":\"https://down-ws-vn.vod.susercontent.com/c3/98934353/160/A3oyOXsvABwwttImIRQBCQAn.jpg\",\"cover_list\":[],\"formats\":[],\"default_format\":{\"format\":600001,\"defn\":\"ORI\",\"profile\":\"MP4\",\"path\":\"\",\"url\":\"https://down-ws-vn.vod.susercontent.com/c3/98934353/160/A3oyOVEsAIAvttImIRUBBwAn.mp4\",\"width\":250,\"height\":250,\"bitrate\":363906,\"abitrate\":0,\"size\":141879,\"fps\":25,\"duration\":3079,\"update_time\":1690924616,\"codec\":\"H264\"},\"extend_formats\":{\"H265\":[{\"format\":1600305,\"defn\":\"V270P\",\"profile\":\"MP4\",\"path\":\"api/v4/11110160/mms/sg-11110160-6jrof-ljxqilyotyfr69.16003051690953421.mp4\",\"url\":\"https://down-ws-vn.vod.susercontent.com/api/v4/11110160/mms/sg-11110160-6jrof-ljxqilyotyfr69.16003051690953421.mp4\",\"width\":250,\"height\":250,\"bitrate\":193644,\"abitrate\":0,\"size\":77936,\"fps\":25.32895,\"duration\":3039,\"update_time\":1690924619,\"codec\":\"H265\"}]},\"ab_test\":\"\"}",
+                            "score": 0,
+                            "url": "https://down-ws-vn.vod.susercontent.com/c3/98934353/160/A3oyOVEsAIAvttImIRUBBwAn.mp4",
+                            "video_tier": 0
+                        },
+                        "id": "vn-11110103-6jrnn-ljvl8ksktu6a1f",
+                        "mms_ext": "{\"vid\":\"vn-11110103-6jrnn-ljvl8ksktu6a1f\",\"biz\":103,\"duration\":12000,\"create_time\":1690823476,\"update_time\":1690823478,\"serviceID\":2,\"cover\":\"https://down-zl-vn.img.susercontent.com/vn-11110103-23080-eqrgrkxiv6tv32\",\"cover_list\":[],\"formats\":[{\"format\":1600005,\"defn\":\"V640P\",\"profile\":\"MP4\",\"path\":\"api/v4/11110103/mms/vn-11110103-6jrnn-ljvl8ksktu6a1f.16000051690823478.mp4\",\"url\":\"https://down-tx-vn.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6jrnn-ljvl8ksktu6a1f.16000051690823478.mp4\",\"width\":640,\"height\":360,\"bitrate\":512515,\"abitrate\":96621,\"size\":922369,\"fps\":25.08361,\"duration\":11982,\"update_time\":1690823481,\"codec\":\"H264\"}],\"default_format\":{\"format\":1600323,\"defn\":\"V540P\",\"profile\":\"MP4\",\"path\":\"\",\"url\":\"https://mms.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6jrnn-ljvl8ksktu6a1f.default.mp4\",\"width\":640,\"height\":360,\"bitrate\":413559,\"abitrate\":64742,\"size\":726701,\"fps\":25.08361,\"duration\":11982,\"update_time\":1726498084,\"codec\":\"H264\"},\"extend_formats\":{\"H265\":[{\"format\":1600308,\"defn\":\"V640P\",\"profile\":\"MP4\",\"path\":\"api/v4/11110103/mms/vn-11110103-6jrnn-ljvl8ksktu6a1f.16003081691950323.mp4\",\"url\":\"https://down-tx-vn.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6jrnn-ljvl8ksktu6a1f.16003081691950323.mp4\",\"width\":640,\"height\":360,\"bitrate\":323305,\"abitrate\":128556,\"size\":690103,\"fps\":25.08361,\"duration\":11982,\"update_time\":1691950335,\"codec\":\"H265\"}]},\"ab_test\":\"\"}",
+                        "score": 0,
+                        "url": "https://down-tx-vn.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6jrnn-ljvl8ksktu6a1f.16000051690823478.mp4",
+                        "video_tier": 1
+                    }
+                ]
+            },
+            {
+                "anonymous": true,
+                "author_username": "n*****5",
+                "cmtid": 14071101743,
+                "comment": "Đúng với mô tả:đúng mô tả\nChất liệu:Kim loại\nMàu sắc:nhiều màu ngẫu nhiên\n\nChuông siêu xinh, đáng yêu, nhiều màu, shop giao hàng nhanh, đóng gói cẩn thận, shipper thân thiện.",
+                "ctime": 1706812232,
+                "detailed_rating": {
+                    "delivery_service": 5,
+                    "product_quality": 5,
+                    "seller_service": 5
+                },
+                "display_variation_filter": true,
+                "editable": 0,
+                "exclude_scoring_due_low_logistic": false,
+                "filter": 7,
+                "has_template_tag": true,
+                "image_data": [
+                    {
+                        "cover_image_id": "vn-11134103-7r98o-lr7pqteujgk93f",
+                        "image_id": "vn-11134103-7r98o-lr7pqteujgk93f",
+                        "score": 0
+                    }
+                ],
+                "images": [
+                    "vn-11134103-7r98o-lr7pqteujgk93f"
+                ],
+                "is_half_pdp": false,
+                "is_hidden": false,
+                "is_normal_item": true,
+                "is_repeated_purchase": false,
+                "is_super_review": false,
+                "itemid": 21181281963,
+                "key_media": {
+                    "key_media_code": 0,
+                    "key_media_id": ""
+                },
+                "like_count": 2,
+                "liked": false,
+                "medias": [
+                    {
+                        "video": {
+                            "cover": "https://down-zl-vn.img.susercontent.com/vn-11110103-7r98o-lr7preitnoij18",
+                            "cover_image_id": "sg-11134206-7rcf7-lr7pstit20abb0",
+                            "duration": 6479,
+                            "highlight": {
+                                "cover": "https://down-zl-vn.img.susercontent.com/vn-11110103-7r98o-lr7preitnoij18",
+                                "cover_image_id": "sg-11134206-7rcf7-lr7pstit20abb0",
+                                "duration": 6479,
+                                "id": "vn-11110103-6ke15-lr7prbktyfno32",
+                                "mms_ext": "{\"vid\":\"vn-11110103-6ke15-lr7prbktyfno32\",\"biz\":103,\"duration\":6479,\"create_time\":1706812174,\"update_time\":1706812175,\"serviceID\":2,\"cover\":\"https://down-zl-vn.img.susercontent.com/vn-11110103-7r98o-lr7preitnoij18\",\"cover_list\":[],\"formats\":[{\"format\":1600005,\"defn\":\"V640P\",\"profile\":\"MP4\",\"path\":\"api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.16000051706812175.mp4\",\"url\":\"https://down-tx-vn.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.16000051706812175.mp4\",\"width\":640,\"height\":1138,\"bitrate\":487793,\"abitrate\":96344,\"size\":475056,\"fps\":25.15625,\"duration\":6479,\"update_time\":1706812179,\"codec\":\"H264\"}],\"default_format\":{\"format\":1600323,\"defn\":\"V540P\",\"profile\":\"MP4\",\"path\":\"\",\"url\":\"https://mms.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.default.mp4\",\"width\":540,\"height\":960,\"bitrate\":313277,\"abitrate\":128420,\"size\":361065,\"fps\":25.15625,\"duration\":6486,\"update_time\":1706812192,\"codec\":\"H264\"},\"extend_formats\":{\"H265\":[{\"format\":1600308,\"defn\":\"V640P\",\"profile\":\"MP4\",\"path\":\"api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.16003081706812188.mp4\",\"url\":\"https://down-tx-vn.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.16003081706812188.mp4\",\"width\":640,\"height\":1138,\"bitrate\":387500,\"abitrate\":128458,\"size\":423473,\"fps\":25.15625,\"duration\":6479,\"update_time\":1706812196,\"codec\":\"H265\"}]},\"ab_test\":\"\"}",
+                                "score": 0.562,
+                                "url": "https://down-tx-vn.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.16000051706812175.mp4",
+                                "video_tier": 1
+                            },
+                            "id": "vn-11110103-6ke15-lr7prbktyfno32",
+                            "mms_ext": "{\"vid\":\"vn-11110103-6ke15-lr7prbktyfno32\",\"biz\":103,\"duration\":6479,\"create_time\":1706812174,\"update_time\":1706812175,\"serviceID\":2,\"cover\":\"https://down-zl-vn.img.susercontent.com/vn-11110103-7r98o-lr7preitnoij18\",\"cover_list\":[],\"formats\":[{\"format\":1600005,\"defn\":\"V640P\",\"profile\":\"MP4\",\"path\":\"api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.16000051706812175.mp4\",\"url\":\"https://down-tx-vn.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.16000051706812175.mp4\",\"width\":640,\"height\":1138,\"bitrate\":487793,\"abitrate\":96344,\"size\":475056,\"fps\":25.15625,\"duration\":6479,\"update_time\":1706812179,\"codec\":\"H264\"}],\"default_format\":{\"format\":1600323,\"defn\":\"V540P\",\"profile\":\"MP4\",\"path\":\"\",\"url\":\"https://mms.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.default.mp4\",\"width\":540,\"height\":960,\"bitrate\":313277,\"abitrate\":128420,\"size\":361065,\"fps\":25.15625,\"duration\":6486,\"update_time\":1706812192,\"codec\":\"H264\"},\"extend_formats\":{\"H265\":[{\"format\":1600308,\"defn\":\"V640P\",\"profile\":\"MP4\",\"path\":\"api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.16003081706812188.mp4\",\"url\":\"https://down-tx-vn.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.16003081706812188.mp4\",\"width\":640,\"height\":1138,\"bitrate\":387500,\"abitrate\":128458,\"size\":423473,\"fps\":25.15625,\"duration\":6479,\"update_time\":1706812196,\"codec\":\"H265\"}]},\"ab_test\":\"\"}",
+                            "score": 0,
+                            "url": "https://down-tx-vn.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.16000051706812175.mp4",
+                            "video_tier": 1
+                        }
+                    },
+                    {
+                        "image": {
+                            "cover_image_id": "vn-11134103-7r98o-lr7pqteujgk93f",
+                            "image_id": "vn-11134103-7r98o-lr7pqteujgk93f",
+                            "score": 0
+                        }
+                    }
+                ],
+                "mtime": 1726624851,
+                "opt": 2,
+                "orderid": 0,
+                "origin_itemid": 0,
+                "origin_shopid": 0,
+                "original_item_info": {
+                    "image": "cn-11134207-7qukw-lijl6uvcy0za02",
+                    "is_half_pdp": false,
+                    "itemid": 21181281963,
+                    "name": "Set 10-20 Chuông Tròn Nhỏ Màu Kẹo 14 * 17mm Làm Móc Khóa / Điện Thoại diy",
+                    "shopid": 379903869
+                },
+                "overall_fit": 0,
+                "product_items": [
+                    {
+                        "image": "cn-11134207-7qukw-lijl6uvcy0za02",
+                        "is_half_pdp": false,
+                        "itemid": 21181281963,
+                        "model_name": "Trộn màu,10pcs",
+                        "modelid": 214393124868,
+                        "name": "Set 10-20 Chuông Tròn Nhỏ Màu Kẹo 14 * 17mm Làm Móc Khóa / Điện Thoại diy",
+                        "options": [
+                            "Trộn màu",
+                            "10pcs"
+                        ],
+                        "shopid": 379903869
+                    }
+                ],
+                "rating": 1,
+                "rating_star": 5,
+                "region": "VN",
+                "review_creation_source": 0,
+                "review_type": 0,
+                "shopid": 379903869,
+                "show_reply": true,
+                "show_super_review_tag": false,
+                "sip_info": {
+                    "is_oversea": false,
+                    "origin_region": "vn"
+                },
+                "size_info_abt": "",
+                "status": 2,
+                "submit_time": 1706812232,
+                "super_review_status": 0,
+                "sync_to_social": false,
+                "template_tags": [
+                    "Đúng với mô tả",
+                    "Chất liệu",
+                    "Màu sắc"
+                ],
+                "userid": 926841529,
+                "videos": [
+                    {
+                        "cover": "https://down-zl-vn.img.susercontent.com/vn-11110103-7r98o-lr7preitnoij18",
+                        "cover_image_id": "sg-11134206-7rcf7-lr7pstit20abb0",
+                        "duration": 6479,
+                        "highlight": {
+                            "cover": "https://down-zl-vn.img.susercontent.com/vn-11110103-7r98o-lr7preitnoij18",
+                            "cover_image_id": "sg-11134206-7rcf7-lr7pstit20abb0",
+                            "duration": 6479,
+                            "id": "vn-11110103-6ke15-lr7prbktyfno32",
+                            "mms_ext": "{\"vid\":\"vn-11110103-6ke15-lr7prbktyfno32\",\"biz\":103,\"duration\":6479,\"create_time\":1706812174,\"update_time\":1706812175,\"serviceID\":2,\"cover\":\"https://down-zl-vn.img.susercontent.com/vn-11110103-7r98o-lr7preitnoij18\",\"cover_list\":[],\"formats\":[{\"format\":1600005,\"defn\":\"V640P\",\"profile\":\"MP4\",\"path\":\"api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.16000051706812175.mp4\",\"url\":\"https://down-tx-vn.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.16000051706812175.mp4\",\"width\":640,\"height\":1138,\"bitrate\":487793,\"abitrate\":96344,\"size\":475056,\"fps\":25.15625,\"duration\":6479,\"update_time\":1706812179,\"codec\":\"H264\"}],\"default_format\":{\"format\":1600323,\"defn\":\"V540P\",\"profile\":\"MP4\",\"path\":\"\",\"url\":\"https://mms.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.default.mp4\",\"width\":540,\"height\":960,\"bitrate\":313277,\"abitrate\":128420,\"size\":361065,\"fps\":25.15625,\"duration\":6486,\"update_time\":1706812192,\"codec\":\"H264\"},\"extend_formats\":{\"H265\":[{\"format\":1600308,\"defn\":\"V640P\",\"profile\":\"MP4\",\"path\":\"api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.16003081706812188.mp4\",\"url\":\"https://down-tx-vn.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.16003081706812188.mp4\",\"width\":640,\"height\":1138,\"bitrate\":387500,\"abitrate\":128458,\"size\":423473,\"fps\":25.15625,\"duration\":6479,\"update_time\":1706812196,\"codec\":\"H265\"}]},\"ab_test\":\"\"}",
+                            "score": 0.562,
+                            "url": "https://down-tx-vn.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.16000051706812175.mp4",
+                            "video_tier": 1
+                        },
+                        "id": "vn-11110103-6ke15-lr7prbktyfno32",
+                        "mms_ext": "{\"vid\":\"vn-11110103-6ke15-lr7prbktyfno32\",\"biz\":103,\"duration\":6479,\"create_time\":1706812174,\"update_time\":1706812175,\"serviceID\":2,\"cover\":\"https://down-zl-vn.img.susercontent.com/vn-11110103-7r98o-lr7preitnoij18\",\"cover_list\":[],\"formats\":[{\"format\":1600005,\"defn\":\"V640P\",\"profile\":\"MP4\",\"path\":\"api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.16000051706812175.mp4\",\"url\":\"https://down-tx-vn.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.16000051706812175.mp4\",\"width\":640,\"height\":1138,\"bitrate\":487793,\"abitrate\":96344,\"size\":475056,\"fps\":25.15625,\"duration\":6479,\"update_time\":1706812179,\"codec\":\"H264\"}],\"default_format\":{\"format\":1600323,\"defn\":\"V540P\",\"profile\":\"MP4\",\"path\":\"\",\"url\":\"https://mms.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.default.mp4\",\"width\":540,\"height\":960,\"bitrate\":313277,\"abitrate\":128420,\"size\":361065,\"fps\":25.15625,\"duration\":6486,\"update_time\":1706812192,\"codec\":\"H264\"},\"extend_formats\":{\"H265\":[{\"format\":1600308,\"defn\":\"V640P\",\"profile\":\"MP4\",\"path\":\"api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.16003081706812188.mp4\",\"url\":\"https://down-tx-vn.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.16003081706812188.mp4\",\"width\":640,\"height\":1138,\"bitrate\":387500,\"abitrate\":128458,\"size\":423473,\"fps\":25.15625,\"duration\":6479,\"update_time\":1706812196,\"codec\":\"H265\"}]},\"ab_test\":\"\"}",
+                        "score": 0,
+                        "url": "https://down-tx-vn.vod.susercontent.com/api/v4/11110103/mms/vn-11110103-6ke15-lr7prbktyfno32.16000051706812175.mp4",
+                        "video_tier": 1
+                    }
+                ]
+            }
+        ],
+        "rcmd_algo": "BUNDLE:comment_search,BUNDLE_RANKER:media_ranker_v1,RECALLER:comment_search_split_ranking_buyer_gallery_v3,QUEUE:comment_search_default,NEWABTEST:456773,QUEUES:comment_search_default",
+        "resize_image_abt": true,
+        "search_bar_enough_organic_review": true,
+        "show_local_review": true,
+        "signature": "",
+        "similar_section_scenario": 0,
+        "size_filter_count": 0,
+        "size_info_abt": "",
+        "variation_filters_data": {}
+    },
+    "error": 0
+}

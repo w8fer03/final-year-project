@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import time, json, pandas as pd
+import os, time, json, pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -70,8 +70,15 @@ def main():
     
     if data:
         df = pd.DataFrame(data)
-        df.to_csv("shopee_reviews.csv", index=False, encoding="utf-8-sig")
-        print(f"[✓] Đã lưu {len(data)} đánh giá vào file shopee_reviews.csv")
+        
+        # Get path of outputs/ directory relative to this script
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        outputs_dir = os.path.join(os.path.dirname(current_dir), "outputs")
+        os.makedirs(outputs_dir, exist_ok=True)
+        
+        output_file = os.path.join(outputs_dir, "shopee_reviews.csv")
+        df.to_csv(output_file, index=False, encoding="utf-8-sig")
+        print(f"[✓] Đã lưu {len(data)} đánh giá vào file: {output_file}")
     else:
         print("[!] Không tìm thấy dữ liệu.")
 

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import time
 import re
 import pandas as pd
@@ -172,8 +173,15 @@ def main():
         
         if data:
             df = pd.DataFrame(data)
-            df.to_csv("shopee_reviews_api.csv", index=False, encoding="utf-8-sig")
-            print(f"[+] Saved {len(data)} clean reviews to shopee_reviews_api.csv")
+            
+            # Get path of outputs/ directory relative to this script
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            outputs_dir = os.path.join(os.path.dirname(current_dir), "outputs")
+            os.makedirs(outputs_dir, exist_ok=True)
+            
+            output_file = os.path.join(outputs_dir, "shopee_reviews_api.csv")
+            df.to_csv(output_file, index=False, encoding="utf-8-sig")
+            print(f"[+] Saved {len(data)} clean reviews to {output_file}")
         else:
             print("[!] No data found or crawl failed.")
             
