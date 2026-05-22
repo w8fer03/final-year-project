@@ -7,7 +7,7 @@ from selenium.webdriver.chrome.options import Options
 
 def get_driver_remote():
     chrome_options = Options()
-    # Kết nối vào cổng 9222 của trình duyệt đang mở
+    # Connect to port 9222 of the active Chrome browser
     chrome_options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
     driver = webdriver.Chrome(options=chrome_options)
     driver.set_script_timeout(30)
@@ -41,14 +41,14 @@ def main():
         return
         
     try:
-        # Đảm bảo trình duyệt đang ở Shopee
+        # Ensure browser is on Shopee
         current_url = driver.current_url
         if "shopee.vn" not in current_url:
             print("[*] Browser is not on Shopee. Navigating...")
             driver.get("https://shopee.vn")
             time.sleep(2)
             
-        # Chúng ta chỉ fetch một vài bản ghi (ví dụ limit=5) để cấu trúc JSON không bị quá dài
+        # Fetch only a few records (e.g. limit=2) to keep the JSON structure concise
         limit = 2
         offset = 0
         
@@ -79,7 +79,7 @@ def main():
             os.makedirs(outputs_dir, exist_ok=True)
             
             output_file = os.path.join(outputs_dir, "shopee_reviews_raw.json")
-            # Lưu dữ liệu gốc chưa chỉnh sửa dưới dạng JSON đẹp
+            # Save the raw, unmodified data as pretty-printed JSON
             with open(output_file, "w", encoding="utf-8") as f:
                 json.dump(raw_data, f, indent=4, ensure_ascii=False)
                 

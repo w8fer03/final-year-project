@@ -72,8 +72,21 @@ PRODUCT_URL = "https://shopee.vn/product-link-here"
 
 Execute the crawler:
 ```bash
-python shopee_crawler_v2_api.py
+python v2_api_injection/shopee_crawler_v2_api.py
 ```
+
+---
+
+## 🛠️ Debug Utility: Fetching Raw JSON Schema
+
+In addition to the main scraper, this directory includes a schema exploration utility: `fetch_raw_sample.py`.
+
+* **Purpose**: Connects to the remote debugging browser, executes a quick direct internal API call with a minimal limit (2 records), and dumps the exact, unmodified raw JSON response structure into `outputs/shopee_reviews_raw.json`.
+* **Use Case**: Extremely useful for debugging, inspecting raw nested data fields (e.g. detailed sub-ratings, buyer IDs, and like counts), or tracking Shopee API schema updates without parsing columns.
+* **Execution**:
+  ```bash
+  python v2_api_injection/fetch_raw_sample.py
+  ```
 
 ---
 

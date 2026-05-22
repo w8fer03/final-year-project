@@ -16,13 +16,13 @@ Below is the journey of how those hurdles were systematically resolved:
 - **Directory**: [`v1_selenium_dom/`](v1_selenium_dom)
 - **Concept**: Bypasses the initial anti-bot system by attaching Selenium to a **real, active Google Chrome browser** in debugging mode (`--remote-debugging-port=9222`). Once attached, it scrolls the page to trigger lazy loading and scrapes reviews directly from the HTML DOM tree using CSS selectors.
 - **Limitation**: Brittle (breaks when Shopee modifies class names) and slow (must paginate manually in the browser UI, loading only 6 comments per page click).
-- **Read More**: Detailed guide in Vietnamese at [README_v1.md](v1_selenium_dom/README_v1.md).
+- **Read More**: Detailed guide in English at [README.md](v1_selenium_dom/README.md).
 
 ### 🟢 Phase 2: V2 - Hybrid API Injection (Recommended)
 - **Directory**: [`v2_api_injection/`](v2_api_injection)
 - **Concept**: A breakthrough optimization. It still connects to the debugged Chrome instance, but instead of clicking elements and parsing HTML, it **injects asynchronous JavaScript fetches** directly into the browser context. Because the requests are made *inside* the authenticated browser under the `shopee.vn` origin, they seamlessly inherit all valid cookies, security tokens, and API signatures.
 - **Advantage**: Bypasses the 403 blocks effortlessly. It is 100x faster, retrieves up to 59 structured reviews in a single call, and is completely immune to CSS UI updates.
-- **Read More**: Detailed guide in English at [README_v2.md](v2_api_injection/README_v2.md).
+- **Read More**: Detailed guide in English at [README.md](v2_api_injection/README.md).
 
 ---
 
@@ -45,13 +45,23 @@ Below is the journey of how those hurdles were systematically resolved:
 scrape_shopee/
 ├── README.md                      <-- Root documentation (this file)
 │
-├── 📁 v1_selenium_dom/            <-- Version 1 (DOM Scraping)
+├── 📁 v1_selenium_dom/            <-- Phase 1: DOM Scraping (Legacy)
 │   ├── shopee_crawler_v1.py       <-- Original Selenium DOM script
-│   └── README_v1.md               <-- Detailed V1 setup guide (Vietnamese)
+│   └── README.md                  <-- Detailed V1 setup guide (English)
 │
-└── 📁 v2_api_injection/           <-- Version 2 (Optimized API Injection)
-    ├── shopee_crawler_v2_api.py   <-- High-performance JS-injection script
-    └── README_v2.md               <-- Technical walkthrough of V2 (English)
+├── 📁 v2_api_injection/           <-- Phase 2: Hybrid API Injection (Recommended)
+│   ├── shopee_crawler_v2_api.py   <-- High-performance API-injection script
+│   ├── fetch_raw_sample.py        <-- Utility script to fetch raw JSON reviews
+│   └── README.md                  <-- Detailed V2 setup & schema guide (English)
+│
+├── 📁 preprocess/                 <-- Phase 3: NLP Review Cleaning & Standardizing
+│   ├── preprocess.py              <-- Python preprocessor class (Teencode + Spellcheck)
+│   ├── preprocess.ipynb           <-- Jupyter Notebook demo of the pipeline
+│   ├── teencode.json              <-- Static dictionary for slang translation
+│   ├── vietnamese_dictionary.txt  <-- Standard Vietnamese dictionary (74K entries)
+│   └── README.md                  <-- Deep architectural tradeoffs & benchmarks (English)
+│
+└── 📁 outputs/                    <-- Local outputs (Git-ignored directory)
 ```
 
 ---
