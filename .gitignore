@@ -38,3 +38,14 @@ outputs/
 *.csv
 *.json
 
+
+# Streamlit dashboard and local artifacts
+.venv/
+.pytest_cache/
+.streamlit/secrets.toml
+results/*
+!results/.gitkeep
+models/*
+!models/.gitkeep
+*.log
+

@@ -1,0 +1,17 @@
+.block-container { max-width: 1480px; padding-top: 4.5rem; padding-bottom: 3rem; }
+h1 { letter-spacing: -.045em; font-weight: 750 !important; }
+h2, h3 { letter-spacing: -.025em; }
+[data-testid="stSidebar"] { border-right: 1px solid #E5E7F2; }
+[data-testid="stMetric"] { background: #FFFFFF; border: 1px solid #E4E7F0; border-radius: 14px; padding: 18px; min-height: 125px; }
+[data-testid="stMetricLabel"] { color: #68708A; }
+[data-testid="stMetricValue"] { font-size: 1.9rem; letter-spacing: -.04em; }
+[data-testid="stPlotlyChart"] { background: white; border: 1px solid #E4E7F0; border-radius: 14px; overflow: hidden; }
+.eyebrow { font-size: .75rem; letter-spacing: .16em; font-weight: 750; color: #5556D8; margin-bottom: .5rem; }
+.hero-sub { color: #68708A; margin-top: -.4rem; margin-bottom: 1.1rem; }
+.status-note { border: 1px solid #DDDDF7; background: #EEEEFC; padding: 12px 16px; border-radius: 10px; color: #41437A; margin: 8px 0 20px; font-size: .88rem; }
+.section-note { color: #68708A; font-size: .9rem; }
+.empty-state { background: #FFFFFF; border: 1px dashed #C5C9E0; border-radius: 16px; padding: 34px; margin: 10px 0 22px; }
+.empty-state h3 { margin: 0 0 8px; color: #41437A; }
+.empty-state p { color: #68708A; margin-bottom: 0; }
+div.stButton > button, div.stDownloadButton > button { border-radius: 8px; }
+@media (max-width: 700px) { .block-container { padding-top: 3.8rem; } [data-testid="stMetricValue"] { font-size: 1.55rem; } }
