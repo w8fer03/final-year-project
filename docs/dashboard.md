@@ -1,8 +1,8 @@
-# Shopee Sentiment Analysis Dashboard
+# SentiLokal – Malaysian E-Commerce Review Sentiment Analytics
 
 **Mixed-Language Electronic Product Reviews | DistilBERT + XGBoost**
 
-A Streamlit exploration dashboard for the FYP *Sentiment Analysis of Mixed-Language Electronic Product Reviews on Shopee Malaysia Using DistilBERT and XGBoost*.
+SentiLokal is a Streamlit exploration dashboard for Malaysian e-commerce review sentiment analytics, developed for the FYP *Sentiment Analysis of Mixed-Language Electronic Product Reviews on Shopee Malaysia Using DistilBERT and XGBoost*.
 
 The project is at **data preprocessing**, before class balancing, training, and evaluation. Current statistics use **star-rating-derived labels**, never model predictions: 1–2 stars → Negative (0), 4–5 stars → Positive (1). Three-star and invalid-rating records are excluded from binary analyses. Customer star ratings are proxy labels and may disagree with the actual comment.
 

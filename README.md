@@ -97,9 +97,9 @@ To run the highly optimized Version 2 immediately:
 3. **The Power of Origin Injection**: When APIs are protected by custom cryptographic request signatures, executing fetches directly inside the browser's context is an elegant, robust solution that eliminates the need for reverse-engineering complex obfuscated JavaScript signature generators.
 
 
-## Shopee Sentiment Analysis Dashboard
+## SentiLokal – Malaysian E-Commerce Review Sentiment Analytics
 
-The Streamlit dashboard explores the supplied review data using star-rating-derived sentiment, with five named products across 17 listing IDs. It includes product comparisons, historical trends, a review explorer, and empty model-evaluation states until valid held-out results are provided.
+SentiLokal is a Streamlit dashboard for Malaysian e-commerce review sentiment analytics. It explores the supplied review data using star-rating-derived sentiment, with five named products across 17 listing IDs. It includes product comparisons, historical trends, a review explorer, and empty model-evaluation states until valid held-out results are provided.
 
 See [the dashboard guide](docs/dashboard.md) for setup, dataset provenance, all four pages, and future model integration. From the repository root:
 

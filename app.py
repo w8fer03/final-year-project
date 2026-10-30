@@ -1,4 +1,4 @@
-"""Shopee review dashboard. Run from this directory: streamlit run app.py."""
+"""SentiLokal review analytics. Run from this directory: streamlit run app.py."""
 from __future__ import annotations
 
 import io
@@ -15,9 +15,12 @@ from dashboard.data import filter_reviews, load_dataset, product_summary, sentim
 from dashboard.products import PRODUCT_NAMES
 
 ROOT = Path(__file__).resolve().parent
+APP_NAME = "SentiLokal"
+APP_DESCRIPTOR = "Malaysian E-Commerce Review Sentiment Analytics"
+APP_TITLE = f"{APP_NAME} – {APP_DESCRIPTOR}"
 PAGES = ["Dashboard Overview", "Product Sentiment Analysis", "Customer Review Explorer", "Model Performance"]
 
-st.set_page_config(page_title="Shopee Sentiment Analysis", page_icon="◈", layout="wide")
+st.set_page_config(page_title=APP_TITLE, page_icon="◈", layout="wide")
 st.markdown(f"<style>{(ROOT / 'assets/style.css').read_text()}</style>", unsafe_allow_html=True)
 
 
@@ -322,7 +325,7 @@ def render_performance(results):
 
 def main():
     with st.sidebar:
-        st.markdown('<div class="sidebar-brand"><span class="brand-mark">◈</span><div>Review insights<small>SHOPEE MALAYSIA</small></div></div><div class="sidebar-label">WORKSPACE</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="sidebar-brand"><span class="brand-mark">◈</span><div>{APP_NAME}<small>MALAYSIAN REVIEW ANALYTICS</small></div></div><div class="sidebar-label">WORKSPACE</div>', unsafe_allow_html=True)
         page = st.radio("Navigation", PAGES, label_visibility="collapsed")
         st.divider()
         st.markdown('<div class="sidebar-label">YOUR DATA</div>', unsafe_allow_html=True)
@@ -377,9 +380,9 @@ def main():
         st.divider()
         st.markdown('<div class="sidebar-footnote"><strong>FYP research workspace</strong><br>Historical review analysis<br>DistilBERT + XGBoost · Integration pending</div>', unsafe_allow_html=True)
     filtered = filter_reviews(df, product_names=products, sentiments=sentiments, start=start, end=end, include_undated=include_undated)
-    st.markdown('<div class="workspace-bar"><div class="workspace-name"><span class="mini-mark">◈</span> CUSTOMER INTELLIGENCE</div><span class="workspace-tag">BASEUS · MALAYSIA</span></div>', unsafe_allow_html=True)
-    st.title("Shopee Sentiment Analysis Dashboard")
-    st.markdown('<p class="hero-sub">Mixed-Language Electronic Product Reviews | DistilBERT + XGBoost</p>', unsafe_allow_html=True)
+    st.markdown(f'<div class="workspace-bar"><div class="workspace-name"><span class="mini-mark">◈</span> {APP_NAME.upper()} WORKSPACE</div><span class="workspace-tag">BASEUS · SHOPEE MALAYSIA</span></div>', unsafe_allow_html=True)
+    st.title(APP_NAME)
+    st.markdown(f'<p class="hero-sub">{APP_DESCRIPTOR}</p>', unsafe_allow_html=True)
     st.markdown('<div class="status-note"><span class="status-badge">DATA EXPLORATION</span><span>Sentiment uses star ratings: <b>1–2★ Negative</b> · <b>4–5★ Positive</b>. Model predictions are separate.</span></div>', unsafe_allow_html=True)
     if page != PAGES[3]:
         selected_dates = filtered.review_date.dropna()
@@ -397,7 +400,7 @@ def main():
         st.caption("Review filters do not change held-out evaluation results.")
         render_performance(results)
     st.divider()
-    st.caption(f"Source: {dataset.source} · Historical dataset analysis · Original comments and preprocessing outputs preserved")
+    st.caption(f"{APP_NAME} · Source: {dataset.source} · Historical dataset analysis · Original comments and preprocessing outputs preserved")
 
 
 if __name__ == "__main__":
