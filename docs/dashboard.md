@@ -44,14 +44,14 @@ Then stop the running Streamlit process with **Ctrl+C** in its terminal and rest
 .venv/bin/python -m streamlit run app.py
 ```
 
-A fresh Python process reloads imported modules such as `dashboard/charts.py`. A browser refresh or Streamlit cache clear alone may leave an older imported chart module running. Restart the server after pulling changes if a chart still shows an old tooltip or layout.
+A full server restart remains recommended after pulling application changes. The app also checks its local chart source on each rerun and refreshes a stale imported chart module when its source changes or a required chart function is missing. This prevents the `rating_imbalance` AttributeError seen when Streamlit had rerun a newer `app.py` while retaining older chart code. This check reads only the repository's chart source; no uploaded content is executed.
 
-## Complete overview and focused views
+## One page with section shortcuts
 
-The original **WORKSPACE** radio navigation is retained. Open **Dashboard Overview** to use the complete dashboard on one scrollable page: a two-column chart grid, product comparison table, customer review search/export/details, and model-performance status. The other radio destinations remain available as focused views; they are not required to access these features from the Overview. Home remains the landing page.
+The original **WORKSPACE** radio list is retained as a set of section shortcuts. Every selection renders the same complete document in this order: Home, Dashboard Overview, Product Sentiment Analysis, Customer Review Explorer, and Model Performance. Selecting a radio option or a landing-page action scrolls to the corresponding section. It does not change pages or hide other sections. Sidebar filters, review searches, and star selections persist when moving between sections.
 
-- **Home (default):** an introduction to SentiLokal and five product cards. **Open dashboard**, **View products**, and **Explore product** lead to the analytics pages; a product card selects that product for exploration. Home works before a review dataset is supplied.
-- **Dashboard Overview:** filtered record/product counts, positive/negative shares, six charts (rating-imbalance treemap, original-review length distribution, star ratings, product sentiment comparison, sentiment donut, monthly trends), product comparison table, source quality report, the full Customer Review Explorer, and Model Performance. All current exploration statistics are available together.
+- **Home (initial section):** an introduction to SentiLokal and five product cards. **Open dashboard**, **View products**, and **Explore product** scroll to the analytical sections; a product card selects that product for exploration. Home works before a review dataset is supplied. Without a dataset, the analytical sections retain their headings and informative upload states, and the model-status section remains available.
+- **Dashboard Overview:** filtered record/product counts, positive/negative shares, six charts (rating-imbalance treemap, original-review length distribution, star ratings, product sentiment comparison, sentiment donut, monthly trends), and the source quality report.
 - **Product Sentiment Analysis:** compare the five named products using a six-column table (Product, Total reviews, Positive, Negative, Positive %, Negative %), focus-product KPIs, and monthly/yearly trends. Product names identify the collection throughout the customer interface.
 - **Customer Review Explorer:** literal case-insensitive Malay/English keyword search, star filters, paginated sortable tables, original customer comments, individual review details, filtered CSV download. Genuine stored predictions can add coverage and agreement filters later.
 - **Model Performance:** informative empty states now. Valid held-out evaluation files automatically enable F1, accuracy, precision, recall, a confusion matrix, recorded configuration, and compatible baseline comparisons. Sidebar exploration filters never modify evaluation metrics.
@@ -131,7 +131,9 @@ Evaluation requires an explicit held-out test declaration, test-set identity, an
 ## Project structure
 
 ```text
-app.py                       Streamlit navigation and pages
+app.py                       Single-document dashboard and section rendering
+dashboard/navigation.py      Sidebar section anchors and local scrolling component
+dashboard/runtime.py         Refresh stale local chart imports after code updates
 dashboard/data.py            Read-only schema normalization, filters, aggregates
 dashboard/products.py        Owner-supplied product-name / listing-ID mapping
 dashboard/presentation.py    Public review fields and safe product labels

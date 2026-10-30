@@ -9,7 +9,8 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from dashboard import charts
+from dashboard.runtime import refresh_charts
+from dashboard.navigation import section_anchor, scroll_to_section
 from dashboard.artifacts import attach_predictions, comparable_evaluations, load_results
 from dashboard.data import filter_reviews, load_dataset, product_summary, sentiment_summary
 from dashboard.media import product_media
@@ -21,6 +22,7 @@ APP_NAME = "SentiLokal"
 APP_DESCRIPTOR = "Malaysian E-Commerce Review Sentiment Analytics"
 APP_TITLE = f"{APP_NAME} – {APP_DESCRIPTOR}"
 PAGES = ["Home", "Dashboard Overview", "Product Sentiment Analysis", "Customer Review Explorer", "Model Performance"]
+charts = refresh_charts()
 
 st.set_page_config(page_title=APP_TITLE, page_icon="◈", layout="wide")
 st.markdown(f"<style>{(ROOT / 'assets/style.css').read_text()}</style>", unsafe_allow_html=True)
@@ -41,7 +43,7 @@ def empty(title: str, message: str):
     st.markdown(f'<div class="empty-state"><h3>{title}</h3><p>{message}</p></div>', unsafe_allow_html=True)
 
 
-def kpis(df: pd.DataFrame, include_products: bool = True):
+def kpis(df: pd.DataFrame, include_products: bool = True, prefix: str = ""):
     s = sentiment_summary(df)
     entries = [("Total reviews", f"{s['total_reviews']:,}")]
     if include_products:
@@ -52,7 +54,7 @@ def kpis(df: pd.DataFrame, include_products: bool = True):
     for index, (col, (label, value)) in enumerate(zip(st.columns(len(entries)), entries)):
         with col:
             metric_key = "total" if index == 0 else label.lower().replace(" ", "_")
-            with st.container(key=f"kpi_{metric_key}"):
+            with st.container(key=f"kpi_{prefix}{metric_key}"):
                 st.metric(label, value)
     st.caption("Based on your current filters · Star-rating labels · Original records retained")
 
@@ -72,8 +74,15 @@ def reset_filters(source_name, products, date_bounds):
 
 def navigate(page: str, product: str | None = None):
     st.session_state.navigation = page
+    queue_section_scroll()
     if product is not None:
         st.session_state.requested_product = product
+
+
+def queue_section_scroll():
+    """Selection moves within the document; it never chooses what to render."""
+    st.session_state.pending_section = st.session_state.navigation
+    st.session_state.scroll_revision = st.session_state.get("scroll_revision", 0) + 1
 
 
 def product_photo(name: str, *, compact: bool = False):
@@ -141,7 +150,7 @@ def trend(df, key, percentage=False, frequency="MS"):
         st.info("A sentiment trend needs valid review dates. Undated reviews remain available in the other analyses.")
 
 
-def render_overview(dataset, df, results):
+def render_overview(dataset, df):
     st.subheader("Dashboard Overview")
     st.caption("The complete picture in one place · All charts follow your sidebar filters.")
     with st.container(key="analytics_board"):
@@ -183,9 +192,6 @@ def render_overview(dataset, df, results):
                         st.caption(f"{int(df.review_date.isna().sum()):,} undated records omitted from this chart.")
                     else:
                         st.info("A sentiment trend needs valid review dates. Undated reviews remain in totals.")
-            with st.container(border=True, key="panel_product_table"):
-                panel_title("Product comparison", "Review totals and sentiment share for every selected product")
-                product_comparison_table(public_product_summary(df))
             st.caption("The original class imbalance is preserved. Three-star and invalid ratings are excluded. Star labels may differ from comment sentiment; no balancing or training is performed.")
     with st.expander("About this dataset", expanded=False):
         st.caption("These quality counts describe the entire selected source file, before sidebar filters.")
@@ -200,13 +206,6 @@ def render_overview(dataset, df, results):
         }
         st.dataframe(pd.DataFrame([{"Check": label, "Records": dataset.quality.get(key, 0)} for key, label in labels.items()]), hide_index=True, use_container_width=True)
         st.caption("The two provided CSVs are alternative versions, not concatenated. Ratings 1–2 → Negative (0), 4–5 → Positive (1). Three-star and invalid-rating records never enter binary statistics. Existing preprocessing exclusions are respected. Original CSVs are unchanged.")
-
-    st.divider()
-    render_explorer(df, results)
-    st.divider()
-    st.caption("Review filters do not change held-out evaluation results.")
-    render_performance(results)
-
 
 def public_product_summary(df):
     """Only customer-facing aggregates may cross the chart and table boundary."""
@@ -253,10 +252,7 @@ def render_products(df):
             st.markdown(f"#### {selection}")
             st.caption(product_media(selection).category)
             st.write("The cards and trend below show customer feedback for this product within your current filters.")
-    kpis(focus, include_products=False)
-    with st.container(border=True, key="panel_comparison"):
-        panel_title("Compare products", "Positive and negative review counts for your sidebar selection")
-        plot(charts.product_comparison(summary), "product_comparison")
+    kpis(focus, include_products=False, prefix="focus_")
     with st.container(border=True, key="panel_product_table"):
         panel_title("Product comparison", "A clear view of review counts and sentiment share")
         product_comparison_table(summary)
@@ -396,10 +392,15 @@ def render_performance(results):
 def main():
     with st.sidebar:
         st.markdown(f'<div class="sidebar-brand"><span class="brand-mark">◈</span><div>{APP_NAME}<small>MALAYSIAN REVIEW ANALYTICS</small></div></div><div class="sidebar-label">WORKSPACE</div>', unsafe_allow_html=True)
-        page = st.radio("Navigation", PAGES, key="navigation", label_visibility="collapsed")
-    if page == "Home":
+        st.radio("Navigation", PAGES, key="navigation", label_visibility="collapsed", on_change=queue_section_scroll)
+        st.caption("Jump to a section · All features stay on this page")
+    with st.container(key="section_home"):
+        section_anchor("Home")
         render_home()
-        return
+    st.divider()
+    results = load_results(Path(os.environ.get("SHOPEE_RESULTS_DIR", ROOT / "results")))
+    content = None
+    source_error = None
     with st.sidebar:
         st.divider()
         st.markdown('<div class="sidebar-label">YOUR DATA</div>', unsafe_allow_html=True)
@@ -416,21 +417,31 @@ def main():
                 path = Path(configured).expanduser()
                 content, name = path.read_bytes(), path.name
             except OSError:
-                st.error("The configured review dataset is unavailable. Please choose another file.")
-                st.stop()
+                source_error = "The configured review dataset is unavailable. Please choose another file."
         elif files:
             names = {"dataset_preprocessed_v3_clean.csv": "Cleaned dataset", "dataset v3 labelled 2.csv": "Labelled dataset"}
             source = st.selectbox("Review dataset", files, index=default, format_func=lambda p: names.get(p.name, p.name))
             content, name = source.read_bytes(), source.name
-        else:
-            st.info("Add a review CSV to data/ or upload one above.")
-            st.stop()
-    try:
-        dataset = cached_dataset(content, name, tuple(sorted(PRODUCT_NAMES.items())))
-    except (ValueError, OSError, UnicodeError, pd.errors.ParserError):
-        st.error("The review file could not be loaded. Please use a supported dataset containing products, original comments, star ratings, and review dates.")
-        st.stop()
-    results = load_results(Path(os.environ.get("SHOPEE_RESULTS_DIR", ROOT / "results")))
+    dataset = None
+    if content is not None:
+        try:
+            dataset = cached_dataset(content, name, tuple(sorted(PRODUCT_NAMES.items())))
+        except (ValueError, OSError, UnicodeError, pd.errors.ParserError):
+            source_error = "The review file could not be loaded. Please use a supported dataset containing products, original comments, star ratings, and review dates."
+    if dataset is None:
+        for destination, key in [("Dashboard Overview", "overview"), ("Product Sentiment Analysis", "products"), ("Customer Review Explorer", "explorer")]:
+            with st.container(key=f"section_{key}"):
+                section_anchor(destination)
+                st.subheader(destination)
+                if source_error:
+                    st.warning(source_error)
+                else:
+                    st.info("Upload a review CSV in the sidebar to explore your dataset here.")
+        with st.container(key="section_performance"):
+            section_anchor("Model Performance")
+            render_performance(results)
+        finish_document()
+        return
     df = dataset.reviews.copy()
     df["product_name"] = [public_product_name(name, product_id) for name, product_id in zip(df.product_name, df.product_id)]
     requested = st.session_state.pop("requested_product", None)
@@ -463,28 +474,37 @@ def main():
         st.divider()
         st.markdown('<div class="sidebar-footnote"><strong>FYP research workspace</strong><br>Historical review analysis<br>DistilBERT + XGBoost · Integration pending</div>', unsafe_allow_html=True)
     filtered = filter_reviews(df, product_names=products, sentiments=sentiments, start=start, end=end, include_undated=include_undated)
-    if page != "Dashboard Overview":
-        st.markdown(f'<div class="workspace-bar"><div class="workspace-name"><span class="mini-mark">◈</span> {APP_NAME.upper()} WORKSPACE</div><span class="workspace-tag">BASEUS · SHOPEE MALAYSIA</span></div>', unsafe_allow_html=True)
-    st.title(APP_NAME)
-    st.markdown(f'<p class="hero-sub">{APP_DESCRIPTOR}</p>', unsafe_allow_html=True)
-    st.markdown('<div class="status-note"><span class="status-badge">DATA EXPLORATION</span><span>Sentiment uses star ratings: <b>1–2★ Negative</b> · <b>4–5★ Positive</b>. Model predictions are separate.</span></div>', unsafe_allow_html=True)
-    if page != "Model Performance":
+    with st.container(key="section_overview"):
+        section_anchor("Dashboard Overview")
+        st.markdown('<div class="status-note"><span class="status-badge">DATA EXPLORATION</span><span>Sentiment uses star ratings: <b>1–2★ Negative</b> · <b>4–5★ Positive</b>. Model predictions are separate.</span></div>', unsafe_allow_html=True)
         selected_dates = filtered.review_date.dropna()
         period = f"{selected_dates.min():%d %b %Y} – {selected_dates.max():%d %b %Y}" if len(selected_dates) else "No dated reviews selected"
         st.markdown(f'<div class="selection-summary"><span><i></i>{len(filtered):,} reviews selected</span><span>{filtered.product_name.nunique()} products</span><span>{period}</span></div>', unsafe_allow_html=True)
-    if results.errors:
-        st.warning("Result file not loaded: some model results are unavailable. Valid results and review exploration remain accessible.")
-    if page == "Dashboard Overview":
-        render_overview(dataset, filtered, results)
-    elif page == "Product Sentiment Analysis":
+        if results.errors:
+            st.warning("Result file not loaded: some model results are unavailable. Valid results and review exploration remain accessible.")
+        render_overview(dataset, filtered)
+    st.divider()
+    with st.container(key="section_products"):
+        section_anchor("Product Sentiment Analysis")
         render_products(filtered)
-    elif page == "Customer Review Explorer":
+    st.divider()
+    with st.container(key="section_explorer"):
+        section_anchor("Customer Review Explorer")
         render_explorer(filtered, results)
-    else:
+    st.divider()
+    with st.container(key="section_performance"):
+        section_anchor("Model Performance")
         st.caption("Review filters do not change held-out evaluation results.")
         render_performance(results)
+    finish_document()
+
+
+def finish_document():
     st.divider()
     st.caption(f"{APP_NAME} · Historical Shopee review analysis · Original customer comments preserved")
+    destination = st.session_state.pop("pending_section", None)
+    if destination in PAGES:
+        scroll_to_section(destination, st.session_state.get("scroll_revision", 0))
 
 
 if __name__ == "__main__":

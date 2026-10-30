@@ -125,3 +125,6 @@ button[kind="primary"] { background: #ffd600; border-color: #ffd600; color: #292
 .st-key-analytics_board [class*="st-key-panel_"] { border-radius: 14px; box-shadow: none; }
 .st-key-analytics_board .panel-heading h3 { font-size: .92rem; }
 .st-key-analytics_board .panel-heading p { font-size: .71rem; margin-bottom: 0; }
+
+/* Sidebar selection scrolls these persistent sections in a single document. */
+.section-anchor { scroll-margin-top: 5rem; height: 1px; outline: none; }
