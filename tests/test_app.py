@@ -86,9 +86,19 @@ class AppTests(unittest.TestCase):
         self.navigate(app, "Product Sentiment Analysis")
         comparison = app.dataframe[0].value
         self.assertEqual(len(comparison), 5)
-        self.assertEqual(comparison.columns.tolist(), ["Product", "Listing IDs", "Listings", "Total reviews", "Positive", "Negative", "Positive %", "Negative %"])
+        self.assertEqual(comparison.columns.tolist(), ["Product", "Total reviews", "Positive", "Negative", "Positive %", "Negative %"])
+        # AppTest.value reads the complete Arrow payload, including columns that
+        # could be restored with Streamlit's column toggle. Projection, rather
+        # than column_config visibility alone, keeps listing fields out of it.
+        for table in app.dataframe:
+            self.assertTrue({"Listing IDs", "Listings", "product_ids", "total_listing_ids"}.isdisjoint(table.value.columns))
+        comparison_spec = app.get("plotly_chart")[0].proto.spec
+        self.assertNotIn("Listing IDs", comparison_spec)
+        self.assertNotIn("Listings", comparison_spec)
+        for listing_ids in PRODUCT_GROUPS.values():
+            for listing_id in listing_ids:
+                self.assertNotIn(listing_id, comparison_spec)
         self.assertEqual(comparison["Total reviews"].sum(), 19295)
-        self.assertEqual(comparison["Listings"].sum(), 17)
         self.assertEqual(set(widget(app.selectbox, "Focus product").options), {"All Products", *PRODUCT_GROUPS})
         for name, listings, total in [(C17, 4, 4338), (H17, 2, 2251)]:
             with self.subTest(product=name):
@@ -99,7 +109,7 @@ class AppTests(unittest.TestCase):
                 self.assertEqual(len(expected), total)
                 self.assertEqual(self.metrics(app)["Total reviews"], f"{total:,}")
                 row = comparison[comparison.Product.eq(name)].iloc[0]
-                self.assertEqual(set(row["Listing IDs"].split(", ")), set(PRODUCT_GROUPS[name]))
+                self.assertEqual(set(expected.product_id), set(PRODUCT_GROUPS[name]))
                 self.assertEqual(row["Total reviews"], total)
         widget(app.radio, "Trend measure").set_value("Sentiment percentage").run()
         widget(app.selectbox, "Time grouping").set_value("Yearly").run()
@@ -126,6 +136,26 @@ class AppTests(unittest.TestCase):
         self.navigate(app, "Product Sentiment Analysis")
         self.assertEqual(app.dataframe[0].value["Total reviews"].sum(), len(expected))
         self.assertEqual(app.dataframe[0].value["Product"].tolist(), [C17])
+
+    def test_reset_filters_restores_full_dataset_and_all_products(self):
+        app = self.app()
+        widget(app.multiselect, "Products").set_value([C17]).run()
+        widget(app.multiselect, "Rating-derived sentiment").set_value(["Negative"]).run()
+        widget(app.date_input, "Review date range").set_value((date(2023, 1, 1), date(2025, 12, 31))).run()
+        widget(app.checkbox, "Include undated reviews").uncheck().run()
+        self.assertNoException(app)
+        self.assertEqual(self.metrics(app)["Products"], "1")
+        self.assertLess(int(self.metrics(app)["Total reviews"].replace(",", "")), len(self.dataset.reviews))
+        widget(app.button, "Reset filters").click().run()
+        self.assertNoException(app)
+        self.assertEqual(set(widget(app.multiselect, "Products").value), set(PRODUCT_GROUPS))
+        self.assertEqual(set(widget(app.multiselect, "Rating-derived sentiment").value), {"Positive", "Negative"})
+        self.assertTrue(widget(app.checkbox, "Include undated reviews").value)
+        dates = self.dataset.reviews.review_date.dropna()
+        self.assertEqual(widget(app.date_input, "Review date range").value, (dates.min().date(), dates.max().date()))
+        self.assertEqual(self.metrics(app)["Total reviews"], "19,295")
+        self.assertEqual(self.metrics(app)["Products"], "5")
+        self.assertEqual(self.metrics(app)["Positive share"], "98.54%")
 
     def test_empty_global_selection_and_explorer_search(self):
         app = self.app()

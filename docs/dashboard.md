@@ -27,14 +27,18 @@ streamlit run app.py
 
 No API keys, databases, or GPU are needed. Streamlit and Plotly are the only UI technologies. The included `.streamlit/config.toml` configures the light theme and disables usage telemetry.
 
+The interface uses a light mint and teal theme, white rounded panels, a high-contrast summary card, and consistent green/red sentiment indicators. Charts and filters remain native Streamlit/Plotly controls with keyboard focus states and a narrow-screen layout.
+
 ## Four pages
 
 - **Dashboard Overview:** filtered record/product counts, positive/negative shares, sentiment donut, original star ratings, historical monthly trends, class imbalance, source quality report.
-- **Product Sentiment Analysis:** compare the five named products across their listing IDs, sortable counts and percentages, focus-product KPIs, monthly/yearly trends in counts or percentages.
+- **Product Sentiment Analysis:** compare the five named products using a six-column table (Product, Total reviews, Positive, Negative, Positive %, Negative %), focus-product KPIs, and monthly/yearly trends. Listing IDs and listing counts are excluded from the comparison table and chart tooltips; original IDs remain available in review details, exports, and the dataset-quality information.
 - **Customer Review Explorer:** literal case-insensitive Malay/English keyword search, star filters, paginated sortable tables, original and existing cleaned text, individual review details, filtered CSV download. Genuine stored predictions can add coverage and agreement filters later.
 - **Model Performance:** informative empty states now. Valid held-out evaluation files automatically enable F1, accuracy, precision, recall, a confusion matrix, recorded configuration, and compatible baseline comparisons. Sidebar exploration filters never modify evaluation metrics.
 
 Global product, sentiment, and inclusive date filters update all exploration charts and totals. Clearing a product/sentiment/rating selection means no matches. Undated records can be included in totals but never contribute to time charts. Empty selections and unavailable optional data have explanatory states.
+
+The sidebar **Reset filters** button restores all products, both sentiments, the full observed date range, and inclusion of undated records. The selection summary shows the current review count, product count, and observed period. The focus-product dropdown changes its summary cards and trend; the comparison table/chart continue to reflect the sidebar selection.
 
 ## Local datasets and actual scope
 

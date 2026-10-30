@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import io
 import os
+from html import escape
 from pathlib import Path
 
 import pandas as pd
@@ -43,9 +44,25 @@ def kpis(df: pd.DataFrame, include_products: bool = True):
     entries += [("Positive reviews", f"{s['positive_reviews']:,}"),
                 ("Negative reviews", f"{s['negative_reviews']:,}"),
                 ("Positive share", f"{s['positive_percentage']:.2f}%" if len(df) else "—")]
-    for col, (label, value) in zip(st.columns(len(entries)), entries):
-        col.metric(label, value)
-    st.caption("All counts are source records in the current selection. Sentiment comes from star ratings; duplicates are retained.")
+    for index, (col, (label, value)) in enumerate(zip(st.columns(len(entries)), entries)):
+        with col:
+            metric_key = "total" if index == 0 else label.lower().replace(" ", "_")
+            with st.container(key=f"kpi_{metric_key}"):
+                st.metric(label, value)
+    st.caption("Based on your current filters · Star-rating labels · Original records retained")
+
+
+def panel_title(title: str, subtitle: str):
+    st.markdown(f'<div class="panel-heading"><h3>{escape(title)}</h3><p>{escape(subtitle)}</p></div>', unsafe_allow_html=True)
+
+
+def reset_filters(source_name, products, date_bounds):
+    """Reset sidebar controls before Streamlit creates the widgets."""
+    st.session_state[f"product_names_{source_name}"] = list(products)
+    st.session_state[f"sentiments_{source_name}"] = ["Positive", "Negative"]
+    st.session_state[f"undated_{source_name}"] = True
+    if date_bounds:
+        st.session_state[f"dates_{source_name}"] = date_bounds
 
 
 def date_caption(df):
@@ -73,17 +90,27 @@ def render_overview(dataset, df):
     if df.empty:
         st.info("No reviews match the current filters. Expand the selection in the sidebar.")
     else:
-        a, b = st.columns([1, 1.4])
+        a, b = st.columns([1, 1.7], gap="medium")
         with a:
-            st.markdown("#### Sentiment distribution")
-            plot(charts.sentiment_donut(df), "overview_donut")
+            with st.container(border=True, key="panel_distribution"):
+                panel_title("Sentiment distribution", "How customers rated their experience")
+                plot(charts.sentiment_donut(df), "overview_donut")
         with b:
-            st.markdown("#### Original star ratings")
-            plot(charts.rating_bars(df), "overview_ratings")
-        st.markdown("#### Sentiment over time")
-        trend(df, "overview_trend")
-        summary = sentiment_summary(df)
-        st.info(f"Class balance in selection: {summary['positive_percentage']:.2f}% positive and {summary['negative_percentage']:.2f}% negative. This dashboard does not resample, balance, or train on these records.")
+            with st.container(border=True, key="panel_history"):
+                panel_title("Sentiment over time", "Monthly review volume across the selected period")
+                trend(df, "overview_trend")
+        a, b = st.columns([1.7, 1], gap="medium")
+        with a:
+            with st.container(border=True, key="panel_ratings"):
+                panel_title("Original star ratings", "The ratings behind your sentiment labels")
+                plot(charts.rating_bars(df), "overview_ratings")
+        with b:
+            with st.container(border=True, key="panel_method"):
+                panel_title("Understanding the results", "Explore the data before modelling")
+                st.markdown('<div class="method-row"><span class="sentiment-dot positive"></span><div><strong>4–5 stars</strong><p>Positive rating-derived sentiment</p></div></div><div class="method-row"><span class="sentiment-dot negative"></span><div><strong>1–2 stars</strong><p>Negative rating-derived sentiment</p></div></div>', unsafe_allow_html=True)
+                summary = sentiment_summary(df)
+                st.info(f"{summary['positive_percentage']:.2f}% positive · {summary['negative_percentage']:.2f}% negative in this selection.")
+                st.caption("The original class imbalance is preserved. Star labels can differ from the sentiment expressed in a comment. No balancing or training is performed here.")
     with st.expander("Dataset overview & quality", expanded=False):
         st.write(f"Source: **{dataset.source}**")
         st.caption("These quality counts describe the entire selected source file, before sidebar filters.")
@@ -114,30 +141,47 @@ def render_overview(dataset, df):
 
 def render_products(df):
     st.subheader("Product Sentiment Analysis")
-    st.caption("Compare named products using your supplied listing-ID mapping. Each product includes all its selected listing IDs.")
+    st.caption("Compare customer feedback across products, then explore one product in detail.")
     if df.empty:
         st.info("No reviews match the current filters.")
         return
     summary = product_summary(df)
-    st.markdown("#### Compare products")
-    plot(charts.product_comparison(summary), "product_comparison")
-    st.caption("Counts and percentages aggregate listing records within each product and the current sidebar selection. Original review rows are retained.")
-    st.dataframe(summary.rename(columns={
-        "product_name": "Product", "product_ids": "Listing IDs", "total_listing_ids": "Listings", "total_reviews": "Total reviews",
-        "positive_reviews": "Positive", "negative_reviews": "Negative",
-        "positive_percentage": "Positive %", "negative_percentage": "Negative %",
-    }), hide_index=True, use_container_width=True,
-        column_config={"Positive %": st.column_config.NumberColumn(format="%.2f%%"), "Negative %": st.column_config.NumberColumn(format="%.2f%%")})
-    st.caption("Click column headers to sort the comparison table.")
     options = ["All Products"] + sorted(df.product_name.unique().tolist())
-    selection = st.selectbox("Focus product", options, key="focus_product_name")
+    with st.container(border=True, key="panel_focus"):
+        label, control = st.columns([1, 1.3])
+        with label:
+            panel_title("Your product view", "Choose a product for the summary cards and trend")
+        with control:
+            selection = st.selectbox("Focus product", options, key="focus_product_name")
     focus = df if selection == "All Products" else df[df.product_name == selection]
     kpis(focus, include_products=False)
-    st.markdown("#### Product sentiment over time")
-    c1, c2 = st.columns(2)
-    percentage = c1.radio("Trend measure", ["Review count", "Sentiment percentage"], horizontal=True) == "Sentiment percentage"
-    freq = c2.selectbox("Time grouping", ["Monthly", "Yearly"])
-    trend(focus, "product_trend", percentage=percentage, frequency="MS" if freq == "Monthly" else "YS")
+    with st.container(border=True, key="panel_comparison"):
+        panel_title("Compare products", "Positive and negative review counts for your sidebar selection")
+        plot(charts.product_comparison(summary), "product_comparison")
+    with st.container(border=True, key="panel_product_table"):
+        panel_title("Product comparison", "A clear view of review counts and sentiment share")
+        # Project the display data so listing metadata cannot be re-enabled in the column menu.
+        display_columns = ["product_name", "total_reviews", "positive_reviews", "negative_reviews", "positive_percentage", "negative_percentage"]
+        st.dataframe(summary[display_columns].rename(columns={
+            "product_name": "Product", "total_reviews": "Total reviews",
+            "positive_reviews": "Positive", "negative_reviews": "Negative",
+            "positive_percentage": "Positive %", "negative_percentage": "Negative %",
+        }), hide_index=True, use_container_width=True,
+            column_config={
+                "Product": st.column_config.TextColumn(width="large"),
+                "Total reviews": st.column_config.NumberColumn(width="small"),
+                "Positive": st.column_config.NumberColumn(width="small"),
+                "Negative": st.column_config.NumberColumn(width="small"),
+                "Positive %": st.column_config.ProgressColumn(format="%.2f%%", min_value=0, max_value=100, width="small"),
+                "Negative %": st.column_config.NumberColumn(format="%.2f%%", width="small"),
+            })
+        st.caption("Select a column heading to sort. Counts reflect your sidebar filters.")
+    with st.container(border=True, key="panel_product_trend"):
+        panel_title("Product sentiment over time", selection)
+        c1, c2 = st.columns([2, 1])
+        percentage = c1.radio("Trend measure", ["Review count", "Sentiment percentage"], horizontal=True) == "Sentiment percentage"
+        freq = c2.selectbox("Time grouping", ["Monthly", "Yearly"])
+        trend(focus, "product_trend", percentage=percentage, frequency="MS" if freq == "Monthly" else "YS")
 
 
 def review_table(df):
@@ -165,9 +209,11 @@ def render_explorer(df, results):
         st.info("Model predictions are not available yet. The labels below are derived from customer star ratings.")
     else:
         st.caption(f"Prediction coverage: {df.predicted_sentiment.notna().sum():,} of {len(df):,} selected records. These explorer comparisons are not held-out model evaluation.")
-    left, right = st.columns([2, 1])
-    search = left.text_input("Search original reviews", placeholder="Try bagus, rosak, sound, battery…")
-    stars = right.multiselect("Star rating", [1, 2, 4, 5], default=[1, 2, 4, 5])
+    with st.container(border=True, key="panel_review_search"):
+        panel_title("Find a review", "Search the original customer comments")
+        left, right = st.columns([2, 1])
+        search = left.text_input("Search original reviews", placeholder="Search for bagus, rosak, sound, battery…")
+        stars = right.multiselect("Star rating", [1, 2, 4, 5], default=[1, 2, 4, 5])
     if search:
         df = df[df.review_text.str.contains(search, case=False, regex=False, na=False)]
     df = df[df.rating.isin(stars)]
@@ -200,7 +246,7 @@ def render_explorer(df, results):
     st.caption(f"Page {page} of {pages}. Export includes all {len(df):,} matching records. Review IDs identify source rows; repeated source IDs are disambiguated.")
     selected_id = st.selectbox("Open review details", visible.review_id.tolist(), format_func=lambda rid: f"{rid} · {visible.loc[visible.review_id.eq(rid), 'review_text'].iloc[0][:70]}")
     row = visible[visible.review_id == selected_id].iloc[0]
-    with st.container(border=True):
+    with st.container(border=True, key="panel_review_detail"):
         st.markdown("#### Original customer review")
         st.text(row.review_text if row.review_text.strip() else "[No original comment supplied]")
         a, b, c = st.columns(3)
@@ -276,16 +322,16 @@ def render_performance(results):
 
 def main():
     with st.sidebar:
-        st.markdown("### ◈ Review insights")
-        st.caption("BASEUS · SHOPEE MALAYSIA")
+        st.markdown('<div class="sidebar-brand"><span class="brand-mark">◈</span><div>Review insights<small>SHOPEE MALAYSIA</small></div></div><div class="sidebar-label">WORKSPACE</div>', unsafe_allow_html=True)
         page = st.radio("Navigation", PAGES, label_visibility="collapsed")
         st.divider()
-        st.markdown("**Data source**")
+        st.markdown('<div class="sidebar-label">YOUR DATA</div>', unsafe_allow_html=True)
         files = sorted((ROOT / "data").glob("*.csv"))
         preferred = next((p for p in files if "preprocessed" in p.name), None)
         default = files.index(preferred) if preferred else 0
         configured = os.environ.get("SHOPEE_DATA_PATH")
-        upload = st.file_uploader("Use another review CSV", type=["csv"])
+        with st.expander("Upload a CSV", expanded=False):
+            upload = st.file_uploader("Use another review CSV", type=["csv"])
         if upload is not None:
             content, name = upload.getvalue(), upload.name
         elif configured:
@@ -310,8 +356,12 @@ def main():
     results = load_results(Path(os.environ.get("SHOPEE_RESULTS_DIR", ROOT / "results")))
     df = dataset.reviews
     with st.sidebar:
-        st.caption(f"{len(df):,} binary review records · {df.product_name.nunique()} products · {df.product_id.nunique()} listing IDs")
-        st.markdown("**Filter reviews**")
+        st.caption(f"{len(df):,} review records · {df.product_name.nunique()} products")
+        st.divider()
+        st.markdown('<div class="sidebar-label">FILTER YOUR VIEW</div>', unsafe_allow_html=True)
+        valid_dates = df.review_date.dropna()
+        date_bounds = (valid_dates.min().date(), valid_dates.max().date()) if len(valid_dates) else None
+        st.button("Reset filters", on_click=reset_filters, args=(name, tuple(sorted(df.product_name.unique())), date_bounds), use_container_width=True)
         products = st.multiselect("Products", sorted(df.product_name.unique()), default=sorted(df.product_name.unique()), key=f"product_names_{name}")
         sentiments = st.multiselect("Rating-derived sentiment", ["Positive", "Negative"], default=["Positive", "Negative"], key=f"sentiments_{name}")
         dates = df.review_date.dropna()
@@ -322,15 +372,19 @@ def main():
                 start, end = selection
             else:
                 st.caption("Choose an end date to apply the date filter.")
-        include_undated = st.checkbox("Include undated reviews", value=True)
+        include_undated = st.checkbox("Include undated reviews", value=True, key=f"undated_{name}")
         st.caption("Undated records can appear in totals but are omitted from trends.")
         st.divider()
-        st.caption("FYP · Mixed-language electronic product reviews. Stage 1 explores the existing data; Stage 2 will integrate trained model results.")
+        st.markdown('<div class="sidebar-footnote"><strong>FYP research workspace</strong><br>Historical review analysis<br>DistilBERT + XGBoost · Integration pending</div>', unsafe_allow_html=True)
     filtered = filter_reviews(df, product_names=products, sentiments=sentiments, start=start, end=end, include_undated=include_undated)
-    st.markdown('<div class="eyebrow">CUSTOMER INTELLIGENCE / RESEARCH WORKSPACE</div>', unsafe_allow_html=True)
+    st.markdown('<div class="workspace-bar"><div class="workspace-name"><span class="mini-mark">◈</span> CUSTOMER INTELLIGENCE</div><span class="workspace-tag">BASEUS · MALAYSIA</span></div>', unsafe_allow_html=True)
     st.title("Shopee Sentiment Analysis Dashboard")
     st.markdown('<p class="hero-sub">Mixed-Language Electronic Product Reviews | DistilBERT + XGBoost</p>', unsafe_allow_html=True)
-    st.markdown('<div class="status-note"><b>Data exploration stage</b> · Sentiment statistics use customer star ratings: 1–2★ Negative, 4–5★ Positive. They are not model predictions.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="status-note"><span class="status-badge">DATA EXPLORATION</span><span>Sentiment uses star ratings: <b>1–2★ Negative</b> · <b>4–5★ Positive</b>. Model predictions are separate.</span></div>', unsafe_allow_html=True)
+    if page != PAGES[3]:
+        selected_dates = filtered.review_date.dropna()
+        period = f"{selected_dates.min():%d %b %Y} – {selected_dates.max():%d %b %Y}" if len(selected_dates) else "No dated reviews selected"
+        st.markdown(f'<div class="selection-summary"><span><i></i>{len(filtered):,} reviews selected</span><span>{filtered.product_name.nunique()} products</span><span>{period}</span></div>', unsafe_allow_html=True)
     for error in results.errors:
         st.warning(f"Result file not loaded: {error}")
     if page == PAGES[0]:

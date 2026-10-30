@@ -7,7 +7,7 @@ from dashboard.charts import product_comparison
 
 
 class ProductComparisonTests(unittest.TestCase):
-    def test_named_groups_preserve_all_counts_and_listing_ids(self):
+    def test_named_groups_show_counts_without_listing_details(self):
         names = [
             "Baseus H17 Encok 3.5mm Wired Earphone",
             "Baseus C17 Type-C Earphones",
@@ -32,9 +32,10 @@ class ProductComparisonTests(unittest.TestCase):
         self.assertEqual(len(set(fig.data[0].y)), 5)
         self.assertEqual(sum(fig.data[0].x) + sum(fig.data[1].x), 150)
         for i, row in summary.iterrows():
-            self.assertEqual(fig.data[0].customdata[i][3], row.product_ids)
-            self.assertEqual(fig.data[0].customdata[i][4], row.total_listing_ids)
+            self.assertEqual(len(fig.data[0].customdata[i]), 3)
             self.assertEqual(fig.data[0].customdata[i][2], row.total_reviews)
+        self.assertNotIn("Listing", fig.data[0].hovertemplate)
+        self.assertNotIn("product_ids", fig.to_json())
         self.assertEqual(fig.layout.yaxis.title.text, "Product")
         self.assertTrue(all(trace.orientation == "h" for trace in fig.data))
         fig.to_json()
