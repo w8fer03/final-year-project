@@ -20,17 +20,17 @@ def _theme(fig: go.Figure, *, height: int = 355) -> go.Figure:
     fig.update_layout(
         template="plotly_white",
         height=height,
-        font=dict(family="Inter, Arial, sans-serif", size=12, color="#68665D"),
+        font=dict(family="Poppins, sans-serif", size=13, color="#68665D"),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=12, r=20, t=46, b=18),
         legend=dict(
             orientation="h", yanchor="bottom", y=1.06, x=0, title=None,
-            font=dict(size=12, color="#57554D"), itemsizing="constant",
+            font=dict(size=13, color="#57554D"), itemsizing="constant",
         ),
         hoverlabel=dict(
             bgcolor="white", bordercolor="#E9E3D0",
-            font=dict(family="Inter, Arial, sans-serif", size=13, color="#292820"),
+            font=dict(family="Poppins, sans-serif", size=14, color="#292820"),
         ),
         hovermode=fig.layout.hovermode or "closest",
         colorway=[POSITIVE, NEGATIVE, ACCENT],
@@ -38,12 +38,12 @@ def _theme(fig: go.Figure, *, height: int = 355) -> go.Figure:
     )
     fig.update_xaxes(
         showgrid=False, zeroline=False, automargin=True,
-        title_font=dict(size=12, color="#7D796B"), tickfont=dict(size=11),
+        title_font=dict(size=13, color="#7D796B"), tickfont=dict(size=12),
         ticks="", showline=False,
     )
     fig.update_yaxes(
         gridcolor="#F1EEE3", gridwidth=1, zeroline=False, automargin=True,
-        title_font=dict(size=12, color="#7D796B"), tickfont=dict(size=11),
+        title_font=dict(size=13, color="#7D796B"), tickfont=dict(size=12),
         ticks="", showline=False,
     )
     return fig

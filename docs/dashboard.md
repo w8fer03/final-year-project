@@ -27,6 +27,8 @@ streamlit run app.py
 
 No API keys, databases, or GPU are needed. Streamlit and Plotly are the only UI technologies. The included `.streamlit/config.toml` configures the light theme and disables usage telemetry.
 
+Poppins is bundled locally in `assets/fonts/` with its SIL Open Font License; browsers do not need Google Fonts access. The base text size is 17px, with slightly larger labels and chart text. Streamlit 1.45 or newer is required for the custom-font theme settings.
+
 The interface uses a Baseus-inspired yellow and charcoal theme, warm neutral backgrounds, white rounded panels, a yellow summary card with dark text, and consistent green/red sentiment indicators. Charts and filters remain native Streamlit/Plotly controls with keyboard focus states and a narrow-screen layout.
 
 ## Updating a running dashboard

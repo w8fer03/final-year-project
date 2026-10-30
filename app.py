@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import io
+from base64 import b64encode
 import os
 from html import escape
 from pathlib import Path
@@ -28,7 +29,14 @@ PAGES = RESEARCH_SECTIONS + ["Upload & Analyze"]
 charts = refresh_charts()
 
 st.set_page_config(page_title=APP_TITLE, page_icon="◈", layout="wide")
-st.markdown(f"<style>{(ROOT / 'assets/style.css').read_text()}</style>", unsafe_allow_html=True)
+font_faces = "\n".join(
+    '@font-face{font-family:"Poppins";font-style:normal;font-weight:' + str(weight)
+    + ';font-display:swap;src:url(data:font/ttf;base64,'
+    + b64encode((ROOT / "assets/fonts" / f"Poppins-{name}.ttf").read_bytes()).decode("ascii")
+    + ') format("truetype");}'
+    for weight, name in [(400, "Regular"), (500, "Medium"), (600, "SemiBold"), (700, "Bold")]
+)
+st.markdown(f"<style>{font_faces}\n{(ROOT / 'assets/style.css').read_text()}</style>", unsafe_allow_html=True)
 
 
 @st.cache_data(show_spinner="Loading review data…")
