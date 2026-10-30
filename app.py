@@ -365,8 +365,21 @@ def render_performance(results):
 
 def main():
     with st.sidebar:
-        st.markdown(f'<div class="sidebar-brand"><span class="brand-mark">◈</span><div>{APP_NAME}<small>MALAYSIAN REVIEW ANALYTICS</small></div></div><div class="sidebar-label">WORKSPACE</div>', unsafe_allow_html=True)
-        page = st.radio("Navigation", PAGES, key="navigation", label_visibility="collapsed")
+        st.markdown(f'<div class="sidebar-brand"><span class="brand-mark">◈</span><div>{APP_NAME}<small>MALAYSIAN REVIEW ANALYTICS</small></div></div><div class="sidebar-label">EXPLORE SENTILOKAL</div>', unsafe_allow_html=True)
+        if st.session_state.get("navigation") not in PAGES:
+            st.session_state.navigation = "Home"
+        navigation_icons = ["home", "space_dashboard", "headphones", "forum", "query_stats"]
+        with st.container(key="workspace_navigation"):
+            for index, (destination, icon) in enumerate(zip(PAGES, navigation_icons)):
+                active = st.session_state.navigation == destination
+                st.button(
+                    destination, icon=f":material/{icon}:",
+                    key=f"nav_{index}", use_container_width=True,
+                    type="primary" if active else "tertiary",
+                    on_click=navigate, args=(destination,),
+                    help=f"Open {destination}",
+                )
+        page = st.session_state.navigation
     if page == "Home":
         render_home()
         return

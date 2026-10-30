@@ -63,7 +63,8 @@ class AppTests(unittest.TestCase):
         self.assertEqual([item.value for item in app.exception], [])
 
     def navigate(self, app, name):
-        widget(app.radio, "Navigation").set_value(name).run()
+        pages = ["Home", "Dashboard Overview", "Product Sentiment Analysis", "Customer Review Explorer", "Model Performance"]
+        next(item for item in app.button if item.key == f"nav_{pages.index(name)}").click().run()
         self.assertNoException(app)
 
     def metrics(self, app):
@@ -101,22 +102,22 @@ class AppTests(unittest.TestCase):
 
     def test_home_landing_and_primary_navigation_actions(self):
         app = self.app(page="Home")
-        self.assertEqual(widget(app.radio, "Navigation").value, "Home")
+        self.assertEqual(app.session_state["navigation"], "Home")
         self.assertNoPublicIdentifiers(app)
         widget(app.button, "Open dashboard").click().run()
         self.assertNoException(app)
-        self.assertEqual(widget(app.radio, "Navigation").value, "Dashboard Overview")
+        self.assertEqual(app.session_state["navigation"], "Dashboard Overview")
         self.assertEqual(self.metrics(app)["Total reviews"], "19,295")
         self.navigate(app, "Home")
         widget(app.button, "View products").click().run()
         self.assertNoException(app)
-        self.assertEqual(widget(app.radio, "Navigation").value, "Product Sentiment Analysis")
+        self.assertEqual(app.session_state["navigation"], "Product Sentiment Analysis")
         self.assertEqual(len(app.dataframe[0].value), 5)
         self.assertNoPublicIdentifiers(app)
         self.navigate(app, "Home")
         next(item for item in app.button if item.key == "explore_baseus-c17").click().run()
         self.assertNoException(app)
-        self.assertEqual(widget(app.radio, "Navigation").value, "Product Sentiment Analysis")
+        self.assertEqual(app.session_state["navigation"], "Product Sentiment Analysis")
         self.assertEqual(widget(app.multiselect, "Products").value, [C17])
         self.assertEqual(widget(app.selectbox, "Focus product").value, C17)
         self.assertEqual(self.metrics(app)["Total reviews"], "4,338")
@@ -433,7 +434,7 @@ class HomeWithoutDatasetTests(unittest.TestCase):
             with patch.dict(os.environ, {"SHOPEE_DATA_PATH": str(missing), "SHOPEE_RESULTS_DIR": folder}):
                 app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=30).run()
                 self.assertEqual([item.value for item in app.exception], [])
-                self.assertEqual(widget(app.radio, "Navigation").value, "Home")
+                self.assertEqual(app.session_state["navigation"], "Home")
                 self.assertEqual(len(app.error), 0)
                 self.assertFalse(any(item.label == "Review dataset" for item in app.selectbox))
                 self.assertEqual(sum(item.label == "Explore product" for item in app.button), 5)

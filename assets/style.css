@@ -13,11 +13,16 @@ h3, h4 { letter-spacing: -.025em; }
 .sidebar-brand small { display: block; font-size: .57rem; font-weight: 650; color: #8a8068; letter-spacing: .14em; margin-top: 3px; }
 .brand-mark { color: #292820; background: #ffd600; width: 39px; height: 39px; border-radius: 13px; display: grid; place-items: center; font-size: 1.5rem; box-shadow: 0 6px 14px #b9910024; }
 .sidebar-label { font-size: .61rem; font-weight: 750; color: #8b8265; letter-spacing: .16em; margin-bottom: 8px; }
-[data-testid="stSidebar"] [role="radiogroup"] { gap: 5px; }
-[data-testid="stSidebar"] [data-testid="stRadioOption"] { border-radius: 11px; padding: 10px 12px; width: 100%; margin: 0; transition: background .15s; }
-[data-testid="stSidebar"] [data-testid="stRadioOption"]:hover { background: #fff9e6; }
-[data-testid="stSidebar"] [data-testid="stRadioOption"]:has(input:checked) { background: #fff2ad; color: #564400; font-weight: 650; }
-[data-testid="stSidebar"] [data-testid="stRadioOption"] p { font-size: .81rem; }
+/* Native buttons retain keyboard navigation; the active destination is a yellow tab. */
+.st-key-workspace_navigation { background: #faf9f4; border: 1px solid #f0ecde; border-radius: 20px; padding: 10px; margin: 4px 0 15px; }
+.st-key-workspace_navigation [data-testid="stVerticalBlock"] { gap: 7px; }
+.st-key-workspace_navigation div.stButton > button { width: 100%; min-height: 53px; justify-content: flex-start; text-align: left; border: 1px solid transparent; border-radius: 13px; padding: 12px 13px; color: #6c6758; background: transparent; transition: background .18s, transform .18s; }
+.st-key-workspace_navigation div.stButton > button p { font-size: .8rem; font-weight: 550; }
+.st-key-workspace_navigation div.stButton > button [data-testid="stIconMaterial"] { margin-right: 9px; font-size: 21px; }
+.st-key-workspace_navigation div.stButton > button:hover { background: #fff; color: #292820; transform: translateX(2px); }
+.st-key-workspace_navigation div.stButton > button[kind="primary"] { background: #ffd600; color: #292820; border-color: #edc700; box-shadow: 0 5px 13px #b9910024; }
+.st-key-workspace_navigation div.stButton > button[kind="primary"]::after { content: "↗"; margin-left: auto; font-size: 17px; }
+.st-key-workspace_navigation div.stButton > button[kind="primary"] p { font-weight: 700; }
 [data-testid="stSidebar"] hr { border-color: var(--line); margin: 1rem 0; }
 [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p { font-size: .77rem; font-weight: 550; }
 [data-testid="stSidebar"] :is([data-baseweb="tag"], [data-tag]) { background: #fff3b5 !important; color: #534500 !important; border-radius: 6px; font-size: .68rem; }
