@@ -99,17 +99,28 @@ To run the highly optimized Version 2 immediately:
 
 ## SentiLokal – Malaysian E-Commerce Review Sentiment Analytics
 
-SentiLokal is a Streamlit dashboard for Malaysian e-commerce review sentiment analytics. One scrollable page contains the Home introduction and five product cards, overview charts, product comparisons, customer review exploration, and future model performance. The sidebar radio list jumps to sections without hiding content. Current insights use star-rating-derived sentiment; model-evaluation states remain empty until valid held-out results are supplied. Source listing and review IDs stay internal and are excluded from customer screens and CSV downloads.
+SentiLokal is a Streamlit dashboard for Malaysian e-commerce review sentiment analytics. One scrollable research page contains the Home introduction and five product cards, overview charts, product comparisons, customer review exploration, and future model performance. The sidebar radio list jumps to these sections; **Upload & Analyze** opens a separate page for user data. Current insights use star-rating-derived sentiment; model-evaluation states remain empty until valid held-out results are supplied. Source listing and review IDs and existing cleaned text stay internal and are excluded from customer screens and CSV downloads.
 
 See [the dashboard guide](docs/dashboard.md) for setup, local product photographs, dataset provenance, navigation, and future model integration. Product photographs use a local validated catalog; verified photos are currently unavailable because official Baseus/Shopee access returned HTTP 403. The cards show an honest empty-photo state. From the repository root:
 
-Dashboard CSV inputs stay local and are not included in Git. Supply them through the sidebar uploader or place them in `data/`.
+The research dashboard automatically loads **only the approved `dataset_preprocessed_v3_clean.csv`**. There is no uploader or dataset selector on that dashboard. All statistics are calculated from this file, with the existing five-product grouping and observed review dates.
+
+**A new clone or deployment has no private CSV.** Provision your original approved file as `data/dataset_preprocessed_v3_clean.csv`, or point `SENTILOKAL_RESEARCH_DATA_PATH` at an approved read-only server file. The loader verifies its SHA-256 before using it. See [exact Codespace and deployment setup](docs/deployment.md), including the checksum and read-only storage configuration. Missing data produces an explicit setup state, never fabricated results.
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
+python scripts/check_research_data.py
 streamlit run app.py
 ```
+
+After owner provisioning, the check command should succeed and the research dashboard loads without a CSV upload. For a server mount, set the path before those commands:
+
+```bash
+export SENTILOKAL_RESEARCH_DATA_PATH=/srv/sentilokal/research/dataset_preprocessed_v3_clean.csv
+```
+
+To explore a different CSV, choose **Upload & Analyze** in the sidebar. Only a review-text column is required; ratings, dates, and products are optional. The page provides validation, available charts, product/sentiment filters, review search, and filtered CSV download. Uploads stay in the individual Streamlit session's server memory, are not written to disk or cached across users, and never replace the research dataset. **Clear Uploaded Dataset** removes the uploaded analysis and resets its file selector. Text-only uploads receive no sentiment classifications; automated prediction awaits the genuine trained model.
 
 Run dashboard checks with `python -m unittest discover -s tests -v`. This dashboard does not train models, balance classes, or change the existing preprocessing scripts.

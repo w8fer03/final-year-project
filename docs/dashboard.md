@@ -46,11 +46,11 @@ Then stop the running Streamlit process with **Ctrl+C** in its terminal and rest
 
 A full server restart remains recommended after pulling application changes. The app also checks its local chart source on each rerun and refreshes a stale imported chart module when its source changes or a required chart function is missing. This prevents the `rating_imbalance` AttributeError seen when Streamlit had rerun a newer `app.py` while retaining older chart code. This check reads only the repository's chart source; no uploaded content is executed.
 
-## One page with section shortcuts
+## Research page and Upload & Analyze
 
-The original **WORKSPACE** radio list is retained as a set of section shortcuts. Every selection renders the same complete document in this order: Home, Dashboard Overview, Product Sentiment Analysis, Customer Review Explorer, and Model Performance. Selecting a radio option or a landing-page action scrolls to the corresponding section. It does not change pages or hide other sections. Sidebar filters, review searches, and star selections persist when moving between sections.
+The original **WORKSPACE** radio list retains five research section shortcuts. These selections render the same complete research document in this order: Home, Dashboard Overview, Product Sentiment Analysis, Customer Review Explorer, and Model Performance. Selecting a section or a landing-page action scrolls within that document. **Upload & Analyze** is a sixth option that opens an isolated page for user-uploaded data. Research controls and upload controls are stored separately and restored when returning to their page.
 
-- **Home (initial section):** an introduction to SentiLokal and five product cards. **Open dashboard**, **View products**, and **Explore product** scroll to the analytical sections; a product card selects that product for exploration. Home works before a review dataset is supplied. Without a dataset, the analytical sections retain their headings and informative upload states, and the model-status section remains available.
+- **Home (initial section):** an introduction to SentiLokal and five product cards. **Open dashboard**, **View products**, and **Explore product** scroll to the analytical sections; a product card selects that product for exploration. Home works before the approved research dataset is provisioned. Without it, the analytical sections retain their headings and show deployment setup instructions; the model-status section remains available.
 - **Dashboard Overview:** filtered record/product counts, positive/negative shares, six charts (rating-imbalance treemap, original-review length distribution, star ratings, product sentiment comparison, sentiment donut, monthly trends), and the source quality report.
 - **Product Sentiment Analysis:** compare the five named products using a six-column table (Product, Total reviews, Positive, Negative, Positive %, Negative %), focus-product KPIs, and monthly/yearly trends. Product names identify the collection throughout the customer interface.
 - **Customer Review Explorer:** literal case-insensitive Malay/English keyword search, star filters, paginated sortable tables, original customer comments, individual review details, filtered CSV download. Genuine stored predictions can add coverage and agreement filters later.
@@ -76,7 +76,7 @@ Photo acquisition is a separate owner task. The running dashboard reads local as
 
 ## Local datasets and actual scope
 
-The prepared workspace has byte-identical copies of both uploaded CSVs in `data/`, selected as alternative versions in the sidebar. They are **not merged**. These files stay local and are excluded from the Git branch. After cloning, place your own original files in `data/`, use `SHOPEE_DATA_PATH`, or upload a CSV in the sidebar. No review data is downloaded from GitHub by the application.
+The prepared workspace has byte-identical copies of both originally supplied CSVs in `data/`. Only the approved **`dataset_preprocessed_v3_clean.csv`** automatically feeds the research dashboard. The labelled alternative is not selected, merged, or used as a fallback. There is no research CSV uploader or dataset selector. These files stay local and are excluded from Git. A new clone or deployment requires owner provisioning, as described in [deployment.md](deployment.md). The application does not download research data from GitHub.
 
 | Source | Source records | Positive | Negative | Products | Listing IDs |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -101,9 +101,15 @@ Maintain this mapping in `dashboard/products.py`. Known IDs use the supplied pro
 
 Repeated source review IDs and duplicate records are retained and reported; totals therefore count **source records**, not a claim of deduplicated customers/reviews. The cleaned file has 2,091 repeated-ID occurrences after the first, with no exact duplicate rows. The labelled file has 5,610 repeated-ID occurrences and 4,077 exact duplicate rows. Deduplication or revised research scope belongs in a separate data decision. No balancing, training, inference, or rewriting of the existing preprocessing pipeline occurs.
 
-### Bring another CSV
+### Upload & Analyze
 
-Use the sidebar CSV uploader, place a file in `data/`, or set `SHOPEE_DATA_PATH` to a local CSV. The environment override takes precedence over local directory files; uploads take precedence over both.
+Choose **Upload & Analyze** from the sidebar to open its dedicated file uploader. Review text is required; ratings, dates, and products are optional. Supported names are documented on the page. Uploads are parsed without writing files and without Streamlit's global data cache. Each session retains its own parsed records until cleared or the session expires. **Clear Uploaded Dataset** clears the session analysis, filters, filename, and file-selector generation so the old CSV is not immediately reloaded.
+
+The page shows total source rows, available product information, positive/negative counts and percentages among eligible binary ratings, observed dates, charts where the necessary fields exist, and a paginated review explorer. Three-star, invalid-rating, and unrated rows remain available in the explorer with blank binary sentiment. Text-only uploads show pending automated prediction; they are never classified by keyword heuristics or supplied prediction columns. Unknown product identifiers receive anonymous display labels so distinct products can be compared without exposing their IDs. Existing preprocessing exclusions, when present, are respected.
+
+Upload product/sentiment/date filters apply only to uploaded analysis. Its search and star filters affect its review table and export. No uploaded file, option, or prediction column changes the official research dataset, its filters, or its genuine held-out results. Research source configuration is server-side: `SENTILOKAL_RESEARCH_DATA_PATH` (or legacy `SHOPEE_DATA_PATH` if the new variable is absent), with approved checksum verification. See [deployment.md](deployment.md).
+
+### Research schema for owner integration
 
 For owner integration, the private schema layer maps these source columns without changing the source file. This schema is not displayed in the dashboard:
 
@@ -116,7 +122,7 @@ For owner integration, the private schema layer maps these source columns withou
 | `cmtid` / `review_id` | `source_review_id` |
 | `cleaned_comment_v3` / `cleaned_text` / `cleaned_comment` | `cleaned_text` |
 
-Product ID, original comment, star rating, and review date **columns** are required. Missing values are counted; invalid dates remain undated. Ambiguous slash dates use month/day/year as in the provided Shopee files. Existing nonempty `preprocess_status` values other than `keep` are respected as exclusions from binary statistics. Existing labels are compared with ratings but do not override the rating-based definition.
+For the **research loader**, product ID, original comment, star rating, and review date columns are required. The separate upload loader requires only original comments. Missing values are counted; invalid dates remain undated. Ambiguous slash dates use month/day/year as in the provided Shopee files. Existing nonempty `preprocess_status` values other than `keep` are respected as exclusions from binary statistics. Existing labels are compared with ratings but do not override the rating-based definition.
 
 `review_id` is a unique canonical source-row identity: unique `cmtid` values are retained, repeated/missing ones receive a stable source-row suffix. These IDs remain private and are excluded from customer CSV downloads. Owners preparing future predictions can obtain the exact dataset's canonical IDs through the read-only local Python example in [model_integration.md](model_integration.md#owner-only-review-key-export). No arbitrary prediction columns in uploaded review CSVs are trusted; prediction results must use the separate validated result contract.
 
@@ -132,6 +138,9 @@ Evaluation requires an explicit held-out test declaration, test-set identity, an
 
 ```text
 app.py                       Single-document dashboard and section rendering
+dashboard/research.py        Approved local/read-only research source and checksum
+dashboard/uploads.py         Session-only optional-schema upload normalization
+dashboard/upload_page.py     Separate Upload & Analyze interface
 dashboard/navigation.py      Sidebar section anchors and local scrolling component
 dashboard/runtime.py         Refresh stale local chart imports after code updates
 dashboard/data.py            Read-only schema normalization, filters, aggregates
@@ -148,6 +157,8 @@ data/                        Local CSV inputs (ignored by Git)
 results/                     Real future predictions/evaluation files (empty)
 models/                      Future local trained artifacts (empty)
 docs/dashboard.md            Dashboard setup and usage guide
+docs/deployment.md           Private research data provisioning instructions
+scripts/check_research_data.py Read-only research deployment readiness check
 docs/model_integration.md     Result and model contracts
 tests/                       Transformation, integration, and app interaction tests
 ```

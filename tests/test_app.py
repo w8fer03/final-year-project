@@ -6,6 +6,7 @@ experimental findings.
 """
 from datetime import date
 import io
+from hashlib import sha256
 import json
 import os
 from pathlib import Path
@@ -42,7 +43,7 @@ class AppTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.results = Path(self.temp.name)
-        self.environment = patch.dict(os.environ, {"SHOPEE_RESULTS_DIR": self.temp.name})
+        self.environment = patch.dict(os.environ, {"SHOPEE_RESULTS_DIR": self.temp.name, "SENTILOKAL_RESEARCH_DATA_PATH": str(CLEANED), "SENTILOKAL_RESEARCH_DATA_SHA256": sha256(CLEANED.read_bytes()).hexdigest()})
         self.environment.start()
         self.original_data_path = os.environ.pop("SHOPEE_DATA_PATH", None)
 
@@ -154,7 +155,7 @@ class AppTests(unittest.TestCase):
 
     def test_overview_contains_all_analyses_and_review_tools_on_one_page(self):
         app = self.app()
-        self.assertEqual(widget(app.radio, "Navigation").options, ["Home", "Dashboard Overview", "Product Sentiment Analysis", "Customer Review Explorer", "Model Performance"])
+        self.assertEqual(widget(app.radio, "Navigation").options, ["Home", "Dashboard Overview", "Product Sentiment Analysis", "Customer Review Explorer", "Model Performance", "Upload & Analyze"])
         self.assertFalse(any((item.key or "").startswith("nav_") for item in app.button))
         headings = {item.value for item in app.subheader}
         self.assertTrue({"Dashboard Overview", "Customer Review Explorer", "Model Performance"}.issubset(headings))
@@ -185,7 +186,7 @@ class AppTests(unittest.TestCase):
         widget(app.multiselect, "Star rating").set_value([4, 5]).run()
         initial_reviews = self.review_table(app)["Original review"].tolist()
         self.assertGreater(len(initial_reviews), 0)
-        destinations = widget(app.radio, "Navigation").options
+        destinations = [value for value in widget(app.radio, "Navigation").options if value != "Upload & Analyze"]
         for destination in destinations:
             with self.subTest(destination=destination):
                 self.navigate(app, destination)
@@ -346,20 +347,19 @@ class AppTests(unittest.TestCase):
         self.assertNoPublicIdentifiers(app)
         self.assertIn(review["Original review"], [item.value for item in app.text])
 
-    def test_switch_to_labelled_source_and_empty_sentiment_filter(self):
+    def test_research_source_is_fixed_and_empty_sentiment_filter(self):
         app = self.app()
-        widget(app.selectbox, "Review dataset").set_value(LABELLED).run()
-        self.assertNoException(app)
-        self.assertEqual(self.metrics(app)["Total reviews"], "23,527")
-        self.assertEqual(self.metrics(app)["Positive reviews"], "23,159")
-        self.assertEqual(self.metrics(app)["Negative reviews"], "368")
+        self.assertEqual(len(app.get("file_uploader")), 0)
+        self.assertFalse(any(item.label == "Review dataset" for item in app.selectbox))
+        self.assertEqual(self.metrics(app)["Total reviews"], "19,295")
         widget(app.multiselect, "Rating-derived sentiment").set_value([]).run()
         self.assertNoException(app)
         self.assertEqual(self.metrics(app)["Total reviews"], "0")
 
-    def test_real_labelled_source_has_clean_public_tables_exports_and_hover_data(self):
+    def test_explicit_owner_configured_source_has_clean_public_tables_exports_and_hover_data(self):
+        os.environ["SENTILOKAL_RESEARCH_DATA_PATH"] = str(LABELLED)
+        os.environ["SENTILOKAL_RESEARCH_DATA_SHA256"] = sha256(LABELLED.read_bytes()).hexdigest()
         app = self.app()
-        widget(app.selectbox, "Review dataset").set_value(LABELLED).run()
         self.assertNoException(app)
         self.assertEqual(self.metrics(app)["Total reviews"], "23,527")
         with patch("dashboard.charts.product_comparison", wraps=charts.product_comparison) as render_chart:
@@ -390,7 +390,8 @@ class AppTests(unittest.TestCase):
             fixture[alias] = sentinel
         source = self.results / "internal_cleaned_review_source.csv"
         fixture.to_csv(source, index=False)
-        os.environ["SHOPEE_DATA_PATH"] = str(source)
+        os.environ["SENTILOKAL_RESEARCH_DATA_PATH"] = str(source)
+        os.environ["SENTILOKAL_RESEARCH_DATA_SHA256"] = sha256(source.read_bytes()).hexdigest()
         app = self.app()
         with patch("streamlit.download_button", wraps=st.download_button) as export:
             self.navigate(app, "Customer Review Explorer")
@@ -476,7 +477,8 @@ class AppTests(unittest.TestCase):
         fixture["confidence"] = 9.99
         source = self.results / "review_source.csv"
         fixture.to_csv(source, index=False)
-        os.environ["SHOPEE_DATA_PATH"] = str(source)
+        os.environ["SENTILOKAL_RESEARCH_DATA_PATH"] = str(source)
+        os.environ["SENTILOKAL_RESEARCH_DATA_SHA256"] = sha256(source.read_bytes()).hexdigest()
         app = self.app()
         self.navigate(app, "Customer Review Explorer")
         table = self.review_table(app)
@@ -503,7 +505,7 @@ class HomeWithoutDatasetTests(unittest.TestCase):
         # page. No repository files are removed or replaced by this check.
         with tempfile.TemporaryDirectory() as folder:
             missing = Path(folder) / "unavailable-reviews.csv"
-            with patch.dict(os.environ, {"SHOPEE_DATA_PATH": str(missing), "SHOPEE_RESULTS_DIR": folder}):
+            with patch.dict(os.environ, {"SENTILOKAL_RESEARCH_DATA_PATH": str(missing), "SHOPEE_RESULTS_DIR": folder}):
                 app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=30).run()
                 self.assertEqual([item.value for item in app.exception], [])
                 self.assertEqual(app.session_state["navigation"], "Home")
@@ -512,7 +514,7 @@ class HomeWithoutDatasetTests(unittest.TestCase):
                 self.assertEqual(sum(item.label == "Explore product" for item in app.button), 5)
                 widget(app.button, "Open dashboard").click().run()
                 self.assertEqual([item.value for item in app.exception], [])
-                self.assertTrue(any("configured review dataset is unavailable" in item.value for item in app.warning))
+                self.assertTrue(any("official research dataset is not available" in item.value for item in app.warning))
                 for name in ["home", "overview", "products", "explorer", "performance"]:
                     self.assertTrue(any(block.key == f"section_{name}" for kind in ["flex_container", "vertical"]
                                         for block in app.get(kind)))

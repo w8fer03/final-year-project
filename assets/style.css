@@ -128,3 +128,5 @@ button[kind="primary"] { background: #ffd600; border-color: #ffd600; color: #292
 
 /* Sidebar selection scrolls these persistent sections in a single document. */
 .section-anchor { scroll-margin-top: 5rem; height: 1px; outline: none; }
+.st-key-upload_workspace :is([data-baseweb="tag"], [data-tag]) { background: #fff3b5 !important; color: #534500 !important; border-radius: 6px; }
+.st-key-upload_workspace :is([data-baseweb="tag"], [data-tag]) :is(span, button) { color: #534500 !important; }

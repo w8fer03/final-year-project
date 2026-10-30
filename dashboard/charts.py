@@ -62,12 +62,12 @@ def sentiment_donut(df: pd.DataFrame) -> go.Figure:
     return _theme(fig)
 
 
-def rating_bars(df: pd.DataFrame) -> go.Figure:
-    ratings = [1, 2, 4, 5]
+def rating_bars(df: pd.DataFrame, *, include_neutral: bool = False) -> go.Figure:
+    ratings = [1, 2, 3, 4, 5] if include_neutral else [1, 2, 4, 5]
     counts = df["rating"].value_counts().reindex(ratings, fill_value=0)
     fig = go.Figure(go.Bar(
         x=[f"{r} ★" for r in ratings], y=counts.values,
-        marker_color=[NEGATIVE, NEGATIVE, POSITIVE, POSITIVE],
+        marker_color=[NEGATIVE if r < 3 else ACCENT if r == 3 else POSITIVE for r in ratings],
         text=counts.values, texttemplate="%{text:,}", textposition="outside",
         hovertemplate="%{x}<br>%{y:,} reviews<extra></extra>",
     ))

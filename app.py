@@ -16,12 +16,15 @@ from dashboard.data import filter_reviews, load_dataset, product_summary, sentim
 from dashboard.media import product_media
 from dashboard.presentation import public_product_name, public_reviews
 from dashboard.products import PRODUCT_GROUPS, PRODUCT_NAMES
+from dashboard.research import DEFAULT_FILENAME, ResearchDataError, read_research_source
+from dashboard.upload_page import remember_upload_controls, render_upload_page
 
 ROOT = Path(__file__).resolve().parent
 APP_NAME = "SentiLokal"
 APP_DESCRIPTOR = "Malaysian E-Commerce Review Sentiment Analytics"
 APP_TITLE = f"{APP_NAME} – {APP_DESCRIPTOR}"
-PAGES = ["Home", "Dashboard Overview", "Product Sentiment Analysis", "Customer Review Explorer", "Model Performance"]
+RESEARCH_SECTIONS = ["Home", "Dashboard Overview", "Product Sentiment Analysis", "Customer Review Explorer", "Model Performance"]
+PAGES = RESEARCH_SECTIONS + ["Upload & Analyze"]
 charts = refresh_charts()
 
 st.set_page_config(page_title=APP_TITLE, page_icon="◈", layout="wide")
@@ -81,8 +84,29 @@ def navigate(page: str, product: str | None = None):
 
 def queue_section_scroll():
     """Selection moves within the document; it never chooses what to render."""
-    st.session_state.pending_section = st.session_state.navigation
+    if st.session_state.get("active_workspace") == "research":
+        remember_research_controls()
+    elif st.session_state.get("active_workspace") == "upload":
+        remember_upload_controls()
+    # The isolated upload document shares the existing top-of-page anchor.
+    # This also works when a running server has cached the older navigation module.
+    st.session_state.pending_section = "Home" if st.session_state.navigation == "Upload & Analyze" else st.session_state.navigation
     st.session_state.scroll_revision = st.session_state.get("scroll_revision", 0) + 1
+
+
+def remember_research_controls():
+    keys = {"focus_product_name", "review_page", "rows_per_page"}
+    saved = st.session_state.get("research_controls", {}).copy()
+    saved.update({key: st.session_state[key] for key in st.session_state
+                  if key in keys or key.startswith(("research_", "product_names_", "sentiments_", "dates_", "undated_"))
+                  if key != "research_controls"})
+    st.session_state.research_controls = saved
+
+
+def restore_research_controls():
+    for key, value in st.session_state.get("research_controls", {}).items():
+        if key not in st.session_state:
+            st.session_state[key] = value
 
 
 def product_photo(name: str, *, compact: bool = False):
@@ -205,7 +229,7 @@ def render_overview(dataset, df):
             "missing_product_ids": "Records without product information",
         }
         st.dataframe(pd.DataFrame([{"Check": label, "Records": dataset.quality.get(key, 0)} for key, label in labels.items()]), hide_index=True, use_container_width=True)
-        st.caption("The two provided CSVs are alternative versions, not concatenated. Ratings 1–2 → Negative (0), 4–5 → Positive (1). Three-star and invalid-rating records never enter binary statistics. Existing preprocessing exclusions are respected. Original CSVs are unchanged.")
+        st.caption("The official cleaned research dataset is loaded automatically. Ratings 1–2 → Negative (0), 4–5 → Positive (1). Three-star and invalid-rating records never enter binary statistics. Existing preprocessing exclusions are respected. Original CSVs are unchanged.")
 
 def public_product_summary(df):
     """Only customer-facing aggregates may cross the chart and table boundary."""
@@ -260,8 +284,8 @@ def render_products(df):
     with st.container(border=True, key="panel_product_trend"):
         panel_title("Product sentiment over time", selection)
         c1, c2 = st.columns([2, 1])
-        percentage = c1.radio("Trend measure", ["Review count", "Sentiment percentage"], horizontal=True) == "Sentiment percentage"
-        freq = c2.selectbox("Time grouping", ["Monthly", "Yearly"])
+        percentage = c1.radio("Trend measure", ["Review count", "Sentiment percentage"], horizontal=True, key="research_trend_measure") == "Sentiment percentage"
+        freq = c2.selectbox("Time grouping", ["Monthly", "Yearly"], key="research_trend_group")
         trend(focus, "product_trend", percentage=percentage, frequency="MS" if freq == "Monthly" else "YS")
 
 
@@ -291,13 +315,13 @@ def render_explorer(df, results):
     with st.container(border=True, key="panel_review_search"):
         panel_title("Find a review", "Search the original customer comments")
         left, right = st.columns([2, 1])
-        search = left.text_input("Search original reviews", placeholder="Search for bagus, rosak, sound, battery…")
-        stars = right.multiselect("Star rating", [1, 2, 4, 5], default=[1, 2, 4, 5])
+        search = left.text_input("Search original reviews", placeholder="Search for bagus, rosak, sound, battery…", key="research_search")
+        stars = right.multiselect("Star rating", [1, 2, 4, 5], default=[1, 2, 4, 5], key="research_stars")
     if search:
         df = df[df.review_text.str.contains(search, case=False, regex=False, na=False)]
     df = df[df.rating.isin(stars)]
     if has_predictions:
-        status = st.selectbox("Prediction agreement with star label", ["All reviews", "Matches rating label", "Differs from rating label", "No prediction"])
+        status = st.selectbox("Prediction agreement with star label", ["All reviews", "Matches rating label", "Differs from rating label", "No prediction"], key="research_agreement")
         known = df.predicted_sentiment.notna()
         if status == "Matches rating label":
             df = df[known & df.predicted_sentiment.eq(df.sentiment)]
@@ -393,41 +417,41 @@ def main():
     with st.sidebar:
         st.markdown(f'<div class="sidebar-brand"><span class="brand-mark">◈</span><div>{APP_NAME}<small>MALAYSIAN REVIEW ANALYTICS</small></div></div><div class="sidebar-label">WORKSPACE</div>', unsafe_allow_html=True)
         st.radio("Navigation", PAGES, key="navigation", label_visibility="collapsed", on_change=queue_section_scroll)
-        st.caption("Jump to a section · All features stay on this page")
+        st.caption("Research sections stay on one page. Upload & Analyze opens a separate workspace.")
+    if st.session_state.navigation == "Upload & Analyze":
+        st.session_state.active_workspace = "upload"
+        section_anchor("Home")
+        with st.container(key="upload_workspace"):
+            render_upload_page()
+        finish_document()
+        return
+    st.session_state.active_workspace = "research"
+    restore_research_controls()
     with st.container(key="section_home"):
         section_anchor("Home")
         render_home()
     st.divider()
     results = load_results(Path(os.environ.get("SHOPEE_RESULTS_DIR", ROOT / "results")))
     content = None
+    name = DEFAULT_FILENAME
     source_error = None
     with st.sidebar:
         st.divider()
-        st.markdown('<div class="sidebar-label">YOUR DATA</div>', unsafe_allow_html=True)
-        files = sorted((ROOT / "data").glob("*.csv"))
-        preferred = next((p for p in files if "preprocessed" in p.name), None)
-        default = files.index(preferred) if preferred else 0
-        configured = os.environ.get("SHOPEE_DATA_PATH")
-        with st.expander("Upload a CSV", expanded=False):
-            upload = st.file_uploader("Use another review CSV", type=["csv"])
-        if upload is not None:
-            content, name = upload.getvalue(), upload.name
-        elif configured:
-            try:
-                path = Path(configured).expanduser()
-                content, name = path.read_bytes(), path.name
-            except OSError:
-                source_error = "The configured review dataset is unavailable. Please choose another file."
-        elif files:
-            names = {"dataset_preprocessed_v3_clean.csv": "Cleaned dataset", "dataset v3 labelled 2.csv": "Labelled dataset"}
-            source = st.selectbox("Review dataset", files, index=default, format_func=lambda p: names.get(p.name, p.name))
-            content, name = source.read_bytes(), source.name
+        st.markdown('<div class="sidebar-label">RESEARCH DATA</div>', unsafe_allow_html=True)
+    try:
+        research_source = read_research_source(ROOT)
+        content = research_source.content
+        name = research_source.path.name
+    except ResearchDataError as exc:
+        source_error = str(exc)
     dataset = None
     if content is not None:
         try:
             dataset = cached_dataset(content, name, tuple(sorted(PRODUCT_NAMES.items())))
         except (ValueError, OSError, UnicodeError, pd.errors.ParserError):
-            source_error = "The review file could not be loaded. Please use a supported dataset containing products, original comments, star ratings, and review dates."
+            source_error = "The configured research file could not be read. The project owner must provide the approved processed CSV with products, original comments, star ratings, and review dates."
+    with st.sidebar:
+        st.caption("Official cleaned Shopee Malaysia dataset · Loaded automatically" if dataset is not None else "Official research dataset · Setup required")
     if dataset is None:
         for destination, key in [("Dashboard Overview", "overview"), ("Product Sentiment Analysis", "products"), ("Customer Review Explorer", "explorer")]:
             with st.container(key=f"section_{key}"):
@@ -436,7 +460,11 @@ def main():
                 if source_error:
                     st.warning(source_error)
                 else:
-                    st.info("Upload a review CSV in the sidebar to explore your dataset here.")
+                    st.info("The official research dataset needs to be configured by the project owner. Your own CSV can be explored on Upload & Analyze.")
+        with st.expander("Research dataset setup · Project owner"):
+            st.write("This code-only deployment does not include the private research CSV. Provision the approved dataset on the server before the research charts can load.")
+            st.code("data/dataset_preprocessed_v3_clean.csv\n# Or set SENTILOKAL_RESEARCH_DATA_PATH to a read-only server file.", language="text")
+            st.caption("See README.md and docs/deployment.md for exact setup and checksum verification. User uploads stay separate and cannot replace the research dataset.")
         with st.container(key="section_performance"):
             section_anchor("Model Performance")
             render_performance(results)
@@ -500,8 +528,11 @@ def main():
 
 
 def finish_document():
+    if st.session_state.get("active_workspace") == "research":
+        remember_research_controls()
     st.divider()
-    st.caption(f"{APP_NAME} · Historical Shopee review analysis · Original customer comments preserved")
+    description = "Uploaded review exploration · Star-rating-derived labels" if st.session_state.get("active_workspace") == "upload" else "Historical Shopee review analysis · Original customer comments preserved"
+    st.caption(f"{APP_NAME} · {description}")
     destination = st.session_state.pop("pending_section", None)
     if destination in PAGES:
         scroll_to_section(destination, st.session_state.get("scroll_revision", 0))
