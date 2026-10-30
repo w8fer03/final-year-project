@@ -50,9 +50,9 @@ A full server restart remains recommended after pulling application changes. The
 
 ## Research page and Upload & Analyze
 
-The original **WORKSPACE** radio list retains five research section shortcuts. These selections render the same complete research document in this order: Home, Dashboard Overview, Product Sentiment Analysis, Customer Review Explorer, and Model Performance. Selecting a section or a landing-page action scrolls within that document. **Upload & Analyze** is a sixth option that opens an isolated page for user-uploaded data. Research controls and upload controls are stored separately and restored when returning to their page.
+The sidebar **Application module** selector contains exactly **Baseus Research Dashboard** and **Upload & Analyze**. A new session starts in the research module at **Dashboard Overview**, showing the real results automatically. The original radio list retains the five research section shortcuts. These selections render the same complete research document in this order: Home, Dashboard Overview, Product Sentiment Analysis, Customer Review Explorer, and Model Performance. Selecting a section or a landing-page action scrolls within that document. **Upload & Analyze** is the separate second module, not a research section. Its page never reads the research result files or replaces the research input. Research controls and upload controls are stored separately and restored when returning to their page.
 
-- **Home (initial section):** an introduction to SentiLokal and five product cards. **Open dashboard**, **View products**, and **Explore product** scroll to the analytical sections; a product card selects that product for exploration. Home works before the approved research dataset is provisioned. Without it, the analytical sections retain their headings and show deployment setup instructions; the model-status section remains available.
+- **Home:** an introduction to SentiLokal and five product cards. **Open dashboard**, **View products**, and **Explore product** scroll to the analytical sections; a product card selects that product for exploration. Home works before the approved research dataset is provisioned. Without it, the analytical sections retain their headings and show deployment setup instructions; the model-status section remains available.
 - **Dashboard Overview:** filtered record/product counts, positive/negative shares, six charts (rating-imbalance treemap, original-review length distribution, star ratings, product sentiment comparison, sentiment donut, monthly trends), and the source quality report.
 - **Product Sentiment Analysis:** compare the five named products using a six-column table (Product, Total reviews, Positive, Negative, Positive %, Negative %), focus-product KPIs, and monthly/yearly trends. Product names identify the collection throughout the customer interface.
 - **Customer Review Explorer:** literal case-insensitive Malay/English keyword search, star filters, paginated sortable tables, original customer comments, individual review details, filtered CSV download. Genuine stored predictions can add coverage and agreement filters later.
@@ -78,7 +78,7 @@ Photo acquisition is a separate owner task. The running dashboard reads local as
 
 ## Local datasets and actual scope
 
-The prepared workspace has byte-identical copies of both originally supplied CSVs in `data/`. Only the approved **`dataset_preprocessed_v3_clean.csv`** automatically feeds the research dashboard. The labelled alternative is not selected, merged, or used as a fallback. There is no research CSV uploader or dataset selector. These files stay local and are excluded from Git. A new clone or deployment requires owner provisioning, as described in [deployment.md](deployment.md). The application does not download research data from GitHub.
+The prepared workspace has byte-identical copies of both originally supplied CSVs in `data/`. Only the approved **`dataset_preprocessed_v3_clean.csv`** automatically feeds the research dashboard. The labelled alternative is not selected, merged, or used as a fallback. There is no research CSV uploader or dataset selector. The owner has since committed the approved cleaned file under `data/` and a duplicate at the repository root. The app reads only the approved `data/` file (or an explicit read-only server path). A normal clone now has this source; a code-only/private deployment may still require provisioning, as described in [deployment.md](deployment.md). Source repository permissions must protect internal fields; public dashboard projections alone do not hide Git contents. The application does not download research data from GitHub.
 
 | Source | Source records | Positive | Negative | Products | Listing IDs |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -105,9 +105,9 @@ Repeated source review IDs and duplicate records are retained and reported; tota
 
 ### Upload & Analyze
 
-Choose **Upload & Analyze** from the sidebar to open its dedicated file uploader. Review text is required; ratings, dates, and products are optional. Supported names are documented on the page. Uploads are parsed without writing files and without Streamlit's global data cache. Each session retains its own parsed records until cleared or the session expires. **Clear Uploaded Dataset** clears the session analysis, filters, filename, and file-selector generation so the old CSV is not immediately reloaded.
+Choose **Upload & Analyze** from the sidebar **Application module** selector to open its dedicated file uploader. Review text is required; ratings, dates, and products are optional. Supported names are documented on the page. Uploads are parsed without writing files and without Streamlit's global data cache. Each session retains its own parsed records until cleared or the session expires. **Clear Uploaded Dataset** clears the session analysis, filters, filename, and file-selector generation so the old CSV is not immediately reloaded.
 
-The page shows total source rows, available product information, positive/negative counts and percentages among eligible binary ratings, observed dates, charts where the necessary fields exist, and a paginated review explorer. Three-star, invalid-rating, and unrated rows remain available in the explorer with blank binary sentiment. Text-only uploads show pending automated prediction; they are never classified by keyword heuristics or supplied prediction columns. Unknown product identifiers receive anonymous display labels so distinct products can be compared without exposing their IDs. Existing preprocessing exclusions, when present, are respected.
+The page shows total source rows, available product information, positive/negative counts and percentages among eligible binary ratings, observed dates, charts where the necessary fields exist, and a paginated review explorer. Three-star, invalid-rating, and unrated rows remain available in the explorer with blank binary sentiment. Text-only uploads show descriptive original-comment counts and median word length, with **Model prediction feature coming after training**; they are never classified by keyword heuristics or supplied prediction columns. Unknown product identifiers receive anonymous display labels so distinct products can be compared without exposing their IDs. Existing preprocessing exclusions, when present, are respected.
 
 Upload product/sentiment/date filters apply only to uploaded analysis. Its search and star filters affect its review table and export. No uploaded file, option, or prediction column changes the official research dataset, its filters, or its genuine held-out results. Research source configuration is server-side: `SENTILOKAL_RESEARCH_DATA_PATH` (or legacy `SHOPEE_DATA_PATH` if the new variable is absent), with approved checksum verification. See [deployment.md](deployment.md).
 
@@ -134,13 +134,14 @@ See [model_integration.md](model_integration.md) for complete schemas. Place rea
 
 Evaluation requires an explicit held-out test declaration, test-set identity, and evaluation configuration. Supply test `y_true`/`y_pred` CSVs or consistent recorded metrics plus a confusion matrix and sample count. Baselines must share the test set and evaluation settings. File validation checks structure and numerical consistency; it cannot independently prove that test data was held out during training.
 
-`dashboard/model_loader.py` provides a lazy, optional local DistilBERT–XGBoost adapter requiring the actual tokenizer, safetensors encoder, XGBoost JSON/UBJ, pooling, threshold, and registered original preprocessing function. No model dependencies load during Stage 1. Install matching training-time PyTorch/Transformers/XGBoost versions only when integrating actual trained artifacts. The adapter has not been exercised with trained artifacts because none exist yet.
+`dashboard/inference.py` provides an unavailable-by-default prediction service. The lazy `dashboard/model_loader.py` adapter requires an explicit training contract covering the actual saved tokenizer, safetensors encoder, XGBoost JSON/UBJ, exact tokenization/feature/classification settings, artifact hashes, preprocessing code/resources/settings fingerprint, and supported confidence policy. No model dependencies load during Stage 1. Install matching training-time PyTorch/Transformers/XGBoost versions only when integrating actual trained artifacts. The adapter has not been exercised with trained artifacts because none exist yet.
 
 ## Project structure
 
 ```text
 app.py                       Single-document dashboard and section rendering
 dashboard/research.py        Approved local/read-only research source and checksum
+dashboard/research_view.py    Minimal cached display data; original fields preserved
 dashboard/uploads.py         Session-only optional-schema upload normalization
 dashboard/upload_page.py     Separate Upload & Analyze interface
 dashboard/navigation.py      Sidebar section anchors and local scrolling component
@@ -151,11 +152,12 @@ dashboard/presentation.py    Public review fields and safe product labels
 dashboard/media.py           Local product-photo validation and resolution
 dashboard/charts.py          Reusable Plotly figures
 dashboard/artifacts.py       Validated prediction and held-out evaluation loading
-dashboard/model_loader.py    Optional future model adapter
+dashboard/model_loader.py    Verified future training-contract adapter
+dashboard/inference.py        Unavailable-by-default prediction service boundary
 assets/style.css             Dashboard presentation
 assets/products/catalog.toml Product-photo filenames and source provenance
 .streamlit/config.toml       Streamlit theme/settings
-data/                        Local CSV inputs (ignored by Git)
+data/                        Owner-added approved research input; other CSVs ignored
 results/                     Real future predictions/evaluation files (empty)
 models/                      Future local trained artifacts (empty)
 docs/dashboard.md            Dashboard setup and usage guide

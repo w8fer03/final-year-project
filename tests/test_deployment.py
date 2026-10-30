@@ -62,6 +62,23 @@ print('DEPLOYMENT_RESULT=' + json.dumps({'errors':[item.value for item in app.ex
         self.assertIn('setup required', check.stderr)
 
     @unittest.skipUnless(CLEANED.exists(), 'Private approved dataset needed for real deployment integration')
+    def test_current_branch_data_asset_loads_automatically_after_fresh_deployment(self):
+        # The owner has now committed this exact approved file to the branch.
+        # Mirror the present repository layout, without alternate dataset copies.
+        (self.checkout / 'data').mkdir()
+        target = self.checkout / 'data' / CLEANED.name
+        shutil.copy2(CLEANED, target)
+        before = sha256(target.read_bytes()).hexdigest()
+        result = self.run_app()
+        self.assertEqual(result['errors'], [])
+        self.assertFalse(result['setup'])
+        self.assertEqual(result['metrics']['Total reviews'], '19,295')
+        self.assertEqual(result['metrics']['Products'], '5')
+        self.assertEqual(result['charts'], 7)
+        self.assertEqual(result['uploaders'], 0)
+        self.assertEqual(sha256(target.read_bytes()).hexdigest(), before)
+
+    @unittest.skipUnless(CLEANED.exists(), 'Private approved dataset needed for real deployment integration')
     def test_code_only_deployment_loads_actual_data_from_readonly_volume(self):
         volume = Path(self.temp.name) / 'readonly-private-volume'
         volume.mkdir()

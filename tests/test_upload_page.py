@@ -44,7 +44,7 @@ class UploadPageTests(unittest.TestCase):
 
     def app(self, upload=None):
         app = AppTest.from_file(str(ROOT / 'app.py'), default_timeout=30)
-        app.session_state['navigation'] = 'Upload & Analyze'
+        app.session_state['application_module'] = 'Upload & Analyze'
         with patch('streamlit.file_uploader', return_value=upload):
             app.run()
         self.assertNoException(app)
@@ -83,6 +83,8 @@ class UploadPageTests(unittest.TestCase):
         self.assertEqual(self.metrics(app)['Total uploaded reviews'], '2')
         self.assertEqual(self.metrics(app)['Positive uploaded reviews'], '—')
         self.assertEqual(self.metrics(app)['Negative uploaded reviews'], '—')
+        self.assertEqual(self.metrics(app)['Reviews with original comments'], '2')
+        self.assertEqual(self.metrics(app)['Median review length · words'], '1.0')
         self.assertEqual(len(app.get('plotly_chart')), 0)
         self.assertTrue(app.dataframe[0].value['Rating-derived sentiment'].isna().all())
         self.assertTrue(any('No sentiment classifications have been generated' in item.value for item in app.info))
@@ -100,6 +102,16 @@ class UploadPageTests(unittest.TestCase):
         self.assertNotIn('user_upload_filename', app.session_state)
         self.assertNotIn('user_upload_digest', app.session_state)
         self.assertTrue(any('Your analysis starts here' in item.value for item in app.markdown))
+
+    def test_both_modules_show_pending_prediction_without_loading_a_model(self):
+        with patch('dashboard.inference.load_trained_model') as loader:
+            app = self.app()
+            self.assertTrue(any('Model prediction feature coming after training' in item.value for item in app.info))
+            self.assertEqual(widget(app.selectbox, 'Application module').options, ['Baseus Research Dashboard', 'Upload & Analyze'])
+            widget(app.selectbox, 'Application module').set_value('Baseus Research Dashboard').run()
+            self.assertNoException(app)
+            self.assertTrue(any('Model prediction feature coming after training' in item.value for item in app.info))
+            loader.assert_not_called()
 
     def test_invalid_csv_shows_helpful_message(self):
         app = self.app(FileFixture(b'customer,rating\nA,5\n'))
@@ -129,22 +141,22 @@ class UploadPageTests(unittest.TestCase):
         def upload_for_generation(*args, **kwargs):
             return fixture if kwargs['key'] == 'upload_file_0' else None
         with patch('streamlit.file_uploader', side_effect=upload_for_generation):
-            widget(app.radio, 'Navigation').set_value('Upload & Analyze').run()
+            widget(app.selectbox, 'Application module').set_value('Upload & Analyze').run()
             self.assertNoException(app)
             self.assertEqual(self.metrics(app)['Total uploaded reviews'], '4')
             widget(app.multiselect, 'Uploaded products').set_value(['Earphone B']).run()
             self.assertEqual(self.metrics(app)['Total uploaded reviews'], '2')
-            widget(app.radio, 'Navigation').set_value('Dashboard Overview').run()
+            widget(app.selectbox, 'Application module').set_value('Baseus Research Dashboard').run()
             self.assertNoException(app)
             self.assertEqual({item.label: item.value for item in section(app, 'overview').metric}, research_metrics)
             self.assertEqual(widget(app.multiselect, 'Products').value, [C17])
             self.assertEqual(widget(app.text_input, 'Search original reviews').value, 'BaGuS')
             self.assertEqual(len(app.get('file_uploader')), 0)
-            widget(app.radio, 'Navigation').set_value('Upload & Analyze').run()
+            widget(app.selectbox, 'Application module').set_value('Upload & Analyze').run()
             self.assertEqual(widget(app.multiselect, 'Uploaded products').value, ['Earphone B'])
             widget(app.button, 'Clear Uploaded Dataset').click().run()
             self.assertEqual(len(app.metric), 0)
-            widget(app.radio, 'Navigation').set_value('Dashboard Overview').run()
+            widget(app.selectbox, 'Application module').set_value('Baseus Research Dashboard').run()
         self.assertNoException(app)
         self.assertEqual({item.label: item.value for item in section(app, 'overview').metric}, research_metrics)
         widget(app.button, 'Reset filters').click().run()

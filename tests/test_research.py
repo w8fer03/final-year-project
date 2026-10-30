@@ -3,11 +3,31 @@ from hashlib import sha256
 from pathlib import Path
 import tempfile
 import unittest
+import io
 
+import pandas as pd
+
+from dashboard.data import load_dataset
 from dashboard.research import APPROVED_SHA256, DEFAULT_FILENAME, ResearchDataError, read_research_source
+from dashboard.research_view import dashboard_research_dataset
 
 
 class ResearchSourceTests(unittest.TestCase):
+    def test_cached_display_data_excludes_unrelated_metadata_but_preserves_originals(self):
+        source = io.StringIO('item_id,comment,stars,datetime,cmtid,shop_id,cleaned_text\n14750761025,Original MIXED text!,5,2020-07-14,a,PRIVATE_SHOP,PRIVATE_CLEANED\n14750761025,Original MIXED text!,3,2026-08-15,b,PRIVATE_SHOP,PRIVATE_CLEANED\n')
+        dataset = load_dataset(source)
+        before = dataset.records.copy(deep=True)
+        display = dashboard_research_dataset(dataset)
+        self.assertEqual(display.records.review_text.tolist(), dataset.records.review_text.tolist())
+        self.assertEqual(display.records.review_date.tolist(), dataset.records.review_date.tolist())
+        self.assertEqual(len(display.records), 2)
+        self.assertEqual(len(display.reviews), 1)
+        self.assertEqual(display.quality, dataset.quality)
+        self.assertNotIn('shop_id', display.records)
+        self.assertNotIn('cleaned_text', display.records)
+        self.assertNotIn('PRIVATE_SHOP', display.records.to_csv(index=False))
+        pd.testing.assert_frame_equal(dataset.records, before)
+
     def test_missing_code_only_deployment_explains_setup(self):
         with tempfile.TemporaryDirectory() as directory:
             with self.assertRaisesRegex(ResearchDataError, 'project owner must complete'):

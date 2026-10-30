@@ -1,8 +1,15 @@
 # Provision the official research dataset
 
-The Git branch contains application code, not private review CSVs. A new clone,
-Codespace, or deployment **does not** inherit files from this Codex workspace.
-Do not force-add datasets, encode them into source code, or bypass upload controls.
+The current dashboard branch includes the approved cleaned CSV at
+`data/dataset_preprocessed_v3_clean.csv`, committed by the project owner. There
+is also an owner-added duplicate at the repository root; the app does not read
+that duplicate. An ordinary clone of this branch therefore has the default input
+and automatically loads it, without a dashboard upload or external download.
+Neither copy is modified by the application.
+
+A deployment that omits data files needs the approved read-only file provisioned
+separately. Do not assume that ignored files from an old Codespace exist on a new
+host. Do not force-add more datasets or bypass upload restrictions.
 
 The approved processed input is `dataset_preprocessed_v3_clean.csv`. Its SHA-256 is:
 
@@ -18,7 +25,7 @@ retains the existing 17-to-five product mapping and preprocessing exclusions.
 
 Use your original approved CSV from a private location. In Codespaces, use the
 Explorer's **Upload** action to place it in `data/`; this is owner provisioning,
-not an upload through the customer dashboard. The file stays ignored by Git.
+not an upload through the customer dashboard. This path is already tracked in the current branch; do not commit revised or additional raw data as part of deployment setup.
 Alternatively, from the repository directory, copy a local original:
 
 ```bash
@@ -88,14 +95,41 @@ before restarting the app. Do not change the configured checksum merely to
 suppress a mismatch: first confirm the file is the intended research version.
 No preprocessing, balancing, or training is performed by this application.
 
-## What has been verified
+## Public fields and source access
 
-Deployment tests start the app in an isolated code-only directory without data.
-They verify the explicit missing-setup state and the check command's nonzero exit.
-They then provision a separate read-only temporary volume containing the actual
-approved CSV and verify that the app automatically loads its real data, all five
-products, and all seven charts with no uploader on the research dashboard.
+Both existing tracked CSV copies contain original customer comments and internal
+source/preprocessing fields. Source repository access and application access are
+separate: hiding fields in Streamlit cannot remove them from a Git repository.
+Keep repository and host access appropriate for the approved data. If the source
+must remain private, use a private deployment repository or an approved private
+read-only mount; separately review removal of tracked raw copies/history. This
+change does not delete the owner's datasets or rewrite Git history.
 
-This confirms the application's read-only file integration. It does **not** mean
-that an arbitrary new remote host has been provisioned: that host still needs
-the private file and environment setting described above.
+The app reads the source without altering it. After computing eligibility and
+quality counts, the cached dashboard frame keeps only original review text,
+ratings, dates, product names, eligibility, and the two private keys needed for
+product grouping and future prediction joins. Unrelated source and preprocessing
+columns are discarded from that cache. Customer screens and exports apply a
+stricter allowlist: product, original comment, stars, date, rating-derived label,
+and genuine prediction/confidence fields only when available. Listing/review/shop
+IDs, preprocessing diagnostics and cleaned text are not public table/export fields.
+Original customer comments are intentionally displayed as required by the project;
+this projection is not a claim to redact personal information typed inside a review.
+
+For production, prefer the mounted read-only file path above. Repository checkout
+files are also opened only for reading by the app, but are not automatically
+protected against editing by a server administrator. Apply host read-only mount
+permissions if filesystem enforcement is required.
+
+## What is tested
+
+Deployment tests cover three cases: the current repository layout with the actual
+approved dataset, a minimal code-only deployment with explicit missing-data setup,
+and a separately provisioned read-only volume with the actual approved dataset.
+The ready cases load all five products and seven research charts without a CSV
+uploader. The missing-data case shows no invented findings, and the readiness
+command exits nonzero. Checksums and original records remain unchanged.
+
+A deployment from the present branch normally needs no dataset copy step. A
+code-only/private deployment still needs its file and environment setting. Run
+`python scripts/check_research_data.py` in the actual host before starting Streamlit.

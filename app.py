@@ -18,6 +18,8 @@ from dashboard.media import product_media
 from dashboard.presentation import public_product_name, public_reviews
 from dashboard.products import PRODUCT_GROUPS, PRODUCT_NAMES
 from dashboard.research import DEFAULT_FILENAME, ResearchDataError, read_research_source
+from dashboard.research_view import dashboard_research_dataset
+from dashboard.inference import MODEL_PENDING_MESSAGE
 from dashboard.upload_page import remember_upload_controls, render_upload_page
 
 ROOT = Path(__file__).resolve().parent
@@ -25,7 +27,10 @@ APP_NAME = "SentiLokal"
 APP_DESCRIPTOR = "Malaysian E-Commerce Review Sentiment Analytics"
 APP_TITLE = f"{APP_NAME} – {APP_DESCRIPTOR}"
 RESEARCH_SECTIONS = ["Home", "Dashboard Overview", "Product Sentiment Analysis", "Customer Review Explorer", "Model Performance"]
-PAGES = RESEARCH_SECTIONS + ["Upload & Analyze"]
+RESEARCH_MODULE = "Baseus Research Dashboard"
+UPLOAD_MODULE = "Upload & Analyze"
+MODULES = [RESEARCH_MODULE, UPLOAD_MODULE]
+PAGES = RESEARCH_SECTIONS
 charts = refresh_charts()
 
 st.set_page_config(page_title=APP_TITLE, page_icon="◈", layout="wide")
@@ -42,7 +47,7 @@ st.markdown(f"<style>{font_faces}\n{(ROOT / 'assets/style.css').read_text()}</st
 @st.cache_data(show_spinner="Loading review data…")
 def cached_dataset(content: bytes, name: str, product_catalog: tuple[tuple[str, str], ...]):
     # The catalog is part of the cache key so correcting a name refreshes the data.
-    return load_dataset(io.BytesIO(content), source_name=name)
+    return dashboard_research_dataset(load_dataset(io.BytesIO(content), source_name=name))
 
 
 def plot(fig, key: str):
@@ -84,6 +89,7 @@ def reset_filters(source_name, products, date_bounds):
 
 
 def navigate(page: str, product: str | None = None):
+    st.session_state.application_module = RESEARCH_MODULE
     st.session_state.navigation = page
     queue_section_scroll()
     if product is not None:
@@ -103,7 +109,7 @@ def queue_section_scroll():
 
 
 def remember_research_controls():
-    keys = {"focus_product_name", "review_page", "rows_per_page"}
+    keys = {"navigation", "focus_product_name", "review_page", "rows_per_page"}
     saved = st.session_state.get("research_controls", {}).copy()
     saved.update({key: st.session_state[key] for key in st.session_state
                   if key in keys or key.startswith(("research_", "product_names_", "sentiments_", "dates_", "undated_"))
@@ -380,9 +386,10 @@ def render_explorer(df, results):
 
 def render_performance(results):
     st.subheader("Model Performance")
+    st.info(MODEL_PENDING_MESSAGE)
     st.caption("Held-out evaluation · Negative = 0 · Positive = 1 · F1-score is the primary project metric")
     if not results.evaluations:
-        empty("Evaluation results are not available yet", "The project is currently in data preprocessing. No trained model, test predictions, or evaluation metrics have been supplied. Valid held-out results will appear here once they are added.")
+        empty("Evaluation results are not available yet", "No genuine held-out evaluation results have been supplied. The project is currently in data preprocessing. Valid held-out results will appear here once they are added.")
         st.markdown("#### Evaluation metrics")
         st.info("Accuracy, precision, recall, and F1-score are pending held-out test evaluation.")
         st.markdown("#### Confusion matrix")
@@ -421,12 +428,20 @@ def render_performance(results):
         st.caption("Evaluation and prediction features become available when genuine trained-model results have been supplied.")
 
 
+def switch_module():
+    if st.session_state.get("active_workspace") == "research":
+        remember_research_controls()
+    elif st.session_state.get("active_workspace") == "upload":
+        remember_upload_controls()
+    st.session_state.pending_section = "Home" if st.session_state.application_module == UPLOAD_MODULE else st.session_state.get("research_controls", {}).get("navigation", "Dashboard Overview")
+    st.session_state.scroll_revision = st.session_state.get("scroll_revision", 0) + 1
+
+
 def main():
     with st.sidebar:
-        st.markdown(f'<div class="sidebar-brand"><span class="brand-mark">◈</span><div>{APP_NAME}<small>MALAYSIAN REVIEW ANALYTICS</small></div></div><div class="sidebar-label">WORKSPACE</div>', unsafe_allow_html=True)
-        st.radio("Navigation", PAGES, key="navigation", label_visibility="collapsed", on_change=queue_section_scroll)
-        st.caption("Research sections stay on one page. Upload & Analyze opens a separate workspace.")
-    if st.session_state.navigation == "Upload & Analyze":
+        st.markdown(f'<div class="sidebar-brand"><span class="brand-mark">◈</span><div>{APP_NAME}<small>MALAYSIAN REVIEW ANALYTICS</small></div></div><div class="sidebar-label">MODULES</div>', unsafe_allow_html=True)
+        st.selectbox("Application module", MODULES, key="application_module", on_change=switch_module)
+    if st.session_state.application_module == UPLOAD_MODULE:
         st.session_state.active_workspace = "upload"
         section_anchor("Home")
         with st.container(key="upload_workspace"):
@@ -435,6 +450,13 @@ def main():
         return
     st.session_state.active_workspace = "research"
     restore_research_controls()
+    if st.session_state.get("navigation") not in RESEARCH_SECTIONS:
+        st.session_state.navigation = "Dashboard Overview"
+        st.session_state.pending_section = "Dashboard Overview"
+    with st.sidebar:
+        st.markdown('<div class="sidebar-label">RESEARCH SECTIONS</div>', unsafe_allow_html=True)
+        st.radio("Navigation", RESEARCH_SECTIONS, key="navigation", label_visibility="collapsed", on_change=queue_section_scroll)
+        st.caption("All five research sections stay on one page. Your uploads have their own module.")
     with st.container(key="section_home"):
         section_anchor("Home")
         render_home()
@@ -470,7 +492,7 @@ def main():
                 else:
                     st.info("The official research dataset needs to be configured by the project owner. Your own CSV can be explored on Upload & Analyze.")
         with st.expander("Research dataset setup · Project owner"):
-            st.write("This code-only deployment does not include the private research CSV. Provision the approved dataset on the server before the research charts can load.")
+            st.write("The approved research source is missing or could not be verified. Restore the approved data file or configure its read-only server path before the research charts can load.")
             st.code("data/dataset_preprocessed_v3_clean.csv\n# Or set SENTILOKAL_RESEARCH_DATA_PATH to a read-only server file.", language="text")
             st.caption("See README.md and docs/deployment.md for exact setup and checksum verification. User uploads stay separate and cannot replace the research dataset.")
         with st.container(key="section_performance"):

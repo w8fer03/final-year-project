@@ -56,7 +56,7 @@ class AppTests(unittest.TestCase):
     def app(self, page="Dashboard Overview"):
         app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=30).run()
         self.assertNoException(app)
-        if page != "Home":
+        if widget(app.radio, "Navigation").value != page:
             self.navigate(app, page)
         return app
 
@@ -155,7 +155,7 @@ class AppTests(unittest.TestCase):
 
     def test_overview_contains_all_analyses_and_review_tools_on_one_page(self):
         app = self.app()
-        self.assertEqual(widget(app.radio, "Navigation").options, ["Home", "Dashboard Overview", "Product Sentiment Analysis", "Customer Review Explorer", "Model Performance", "Upload & Analyze"])
+        self.assertEqual(widget(app.radio, "Navigation").options, ["Home", "Dashboard Overview", "Product Sentiment Analysis", "Customer Review Explorer", "Model Performance"])
         self.assertFalse(any((item.key or "").startswith("nav_") for item in app.button))
         headings = {item.value for item in app.subheader}
         self.assertTrue({"Dashboard Overview", "Customer Review Explorer", "Model Performance"}.issubset(headings))
@@ -508,7 +508,7 @@ class HomeWithoutDatasetTests(unittest.TestCase):
             with patch.dict(os.environ, {"SENTILOKAL_RESEARCH_DATA_PATH": str(missing), "SHOPEE_RESULTS_DIR": folder}):
                 app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=30).run()
                 self.assertEqual([item.value for item in app.exception], [])
-                self.assertEqual(app.session_state["navigation"], "Home")
+                self.assertEqual(app.session_state["navigation"], "Dashboard Overview")
                 self.assertEqual(len(app.error), 0)
                 self.assertFalse(any(item.label == "Review dataset" for item in app.selectbox))
                 self.assertEqual(sum(item.label == "Explore product" for item in app.button), 5)

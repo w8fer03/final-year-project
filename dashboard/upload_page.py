@@ -8,6 +8,7 @@ import streamlit as st
 
 from dashboard.data import product_summary, sentiment_summary
 from dashboard.runtime import refresh_charts
+from dashboard.inference import MODEL_PENDING_MESSAGE
 from dashboard.uploads import load_uploaded_dataset, uploaded_public_reviews
 
 CONTROL_KEYS = (
@@ -42,6 +43,7 @@ def _panel(title, subtitle):
 def render_upload_page():
     charts = refresh_charts()
     st.title("Upload & Analyze")
+    st.info(MODEL_PENDING_MESSAGE)
     st.markdown('<p class="hero-sub">Explore your own customer reviews in a separate workspace.</p>', unsafe_allow_html=True)
     st.markdown('<div class="status-note"><span class="status-badge">YOUR UPLOAD</span><span>Your CSV affects only this page and stays in your session. It is not saved to project files. Use <b>Clear Uploaded Dataset</b> to remove it from this session.</span></div>', unsafe_allow_html=True)
     with st.container(border=True, key="panel_upload_file"):
@@ -115,6 +117,10 @@ def render_upload_page():
         else:
             st.caption("No valid review dates are available in this selection.")
     if not dataset.has_ratings:
+        left, right = st.columns(2)
+        lengths = selected.review_text.str.split().str.len()
+        left.metric("Reviews with original comments", f"{int(selected.review_text.str.strip().ne('').sum()):,}")
+        right.metric("Median review length · words", f"{lengths.median():.1f}" if len(lengths) else "—")
         st.info("This CSV has no star-rating column. Automated text-based sentiment prediction will become available after the trained DistilBERT–XGBoost model is integrated. No sentiment classifications have been generated.")
     elif binary.empty:
         st.info("No eligible binary star ratings are available in this selection. Three-star reviews are excluded from binary sentiment analysis.")
