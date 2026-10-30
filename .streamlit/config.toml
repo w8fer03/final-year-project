@@ -1,0 +1,15 @@
+[theme]
+base = "light"
+primaryColor = "#E0B000"
+backgroundColor = "#FAF9F4"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#292820"
+font = "Poppins, sans-serif"
+baseFontSize = 17
+
+[server]
+headless = true
+maxUploadSize = 50
+
+[browser]
+gatherUsageStats = false

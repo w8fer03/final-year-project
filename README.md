@@ -95,3 +95,34 @@ To run the highly optimized Version 2 immediately:
 1. **Working with anti-bot shields**: Classic headless browsers are easily spotted. Attaching to an active Chrome browser via CDP (Chrome DevTools Protocol) is an incredibly powerful way to bypass front-end telemetry checks.
 2. **Shifting from UI to API**: Scraping the DOM is slow and highly fragile. Whenever possible, extracting data from internal APIs is superior.
 3. **The Power of Origin Injection**: When APIs are protected by custom cryptographic request signatures, executing fetches directly inside the browser's context is an elegant, robust solution that eliminates the need for reverse-engineering complex obfuscated JavaScript signature generators.
+
+
+## SentiLokal – Malaysian E-Commerce Review Sentiment Analytics
+
+SentiLokal is a Streamlit dashboard for Malaysian e-commerce review sentiment analytics. One scrollable research page contains the Home introduction and five product cards, overview charts, product comparisons, customer review exploration, and future model performance. The **Application module** selector has exactly two choices: **Baseus Research Dashboard** (default) and **Upload & Analyze**. The research module opens at its overview and retains the Home/product cards and five radio section shortcuts; uploads use a separate page and session state. Current insights use star-rating-derived sentiment; model-evaluation states remain empty until valid held-out results are supplied. Source listing and review IDs and existing cleaned text stay internal and are excluded from customer screens and CSV downloads.
+
+See [the dashboard guide](docs/dashboard.md) for setup, local product photographs, dataset provenance, navigation, and future model integration. Product photographs use a local validated catalog; verified photos are currently unavailable because official Baseus/Shopee access returned HTTP 403. The cards show an honest empty-photo state. From the repository root:
+
+The research dashboard automatically loads **only the approved `dataset_preprocessed_v3_clean.csv`**. There is no uploader or dataset selector on that dashboard. All statistics are calculated from this file, with the existing five-product grouping and observed review dates.
+
+**The current branch includes the cleaned CSV added by the project owner at `data/dataset_preprocessed_v3_clean.csv`.** A normal fresh clone therefore loads the approved data automatically. A deployment that omits data must provision that file or point `SENTILOKAL_RESEARCH_DATA_PATH` at an approved read-only server mount. The app opens it only for reading and verifies its SHA-256. Repository access must still protect any raw source metadata; the app exposes only its public field allowlist. See [exact Codespace and deployment setup](docs/deployment.md), including the checksum and read-only storage configuration. Missing data produces an explicit setup state, never fabricated results.
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python scripts/check_research_data.py
+streamlit run app.py
+```
+
+With the branch dataset present (or after private owner provisioning), the check command should succeed and the research dashboard loads without a CSV upload. For a server mount, set the path before those commands:
+
+```bash
+export SENTILOKAL_RESEARCH_DATA_PATH=/srv/sentilokal/research/dataset_preprocessed_v3_clean.csv
+```
+
+To explore a different CSV, choose **Upload & Analyze** under **Application module** in the sidebar. Only a review-text column is required; ratings, dates, and products are optional. The page provides validation, available charts, product/sentiment filters, review search, and filtered CSV download. Uploads stay in the individual Streamlit session's server memory, are not written to disk or cached across users, and never replace the research dataset. **Clear Uploaded Dataset** removes the uploaded analysis and resets its file selector. Text-only uploads receive descriptive comment counts and lengths without sentiment classifications. Both modules show **Model prediction feature coming after training**. No model is loaded, trained, balanced, or substituted in the current UI.
+
+The future owner-only [prediction service and verified model contract](docs/model_integration.md#future-trained-model-interface-disabled-now) require the exact training preprocessing code and Malay-English normalization resources, saved tokenizer/DistilBERT features, XGBoost settings, artifact hashes, and matching library versions. Inference preserves every original row; confidence is omitted unless the recorded trained model supports it.
+
+Run dashboard checks with `python -m unittest discover -s tests -v`. This dashboard does not train models, balance classes, or change the existing preprocessing scripts.
