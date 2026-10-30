@@ -46,10 +46,12 @@ Then stop the running Streamlit process with **Ctrl+C** in its terminal and rest
 
 A fresh Python process reloads imported modules such as `dashboard/charts.py`. A browser refresh or Streamlit cache clear alone may leave an older imported chart module running. Restart the server after pulling changes if a chart still shows an old tooltip or layout.
 
-## Home and four analytics pages
+## Complete overview and focused views
+
+The original **WORKSPACE** radio navigation is retained. Open **Dashboard Overview** to use the complete dashboard on one scrollable page: a two-column chart grid, product comparison table, customer review search/export/details, and model-performance status. The other radio destinations remain available as focused views; they are not required to access these features from the Overview. Home remains the landing page.
 
 - **Home (default):** an introduction to SentiLokal and five product cards. **Open dashboard**, **View products**, and **Explore product** lead to the analytics pages; a product card selects that product for exploration. Home works before a review dataset is supplied.
-- **Dashboard Overview:** filtered record/product counts, positive/negative shares, sentiment donut, original star ratings, historical monthly trends, class imbalance, source quality report.
+- **Dashboard Overview:** filtered record/product counts, positive/negative shares, six charts (rating-imbalance treemap, original-review length distribution, star ratings, product sentiment comparison, sentiment donut, monthly trends), product comparison table, source quality report, the full Customer Review Explorer, and Model Performance. All current exploration statistics are available together.
 - **Product Sentiment Analysis:** compare the five named products using a six-column table (Product, Total reviews, Positive, Negative, Positive %, Negative %), focus-product KPIs, and monthly/yearly trends. Product names identify the collection throughout the customer interface.
 - **Customer Review Explorer:** literal case-insensitive Malay/English keyword search, star filters, paginated sortable tables, original customer comments, individual review details, filtered CSV download. Genuine stored predictions can add coverage and agreement filters later.
 - **Model Performance:** informative empty states now. Valid held-out evaluation files automatically enable F1, accuracy, precision, recall, a confusion matrix, recorded configuration, and compatible baseline comparisons. Sidebar exploration filters never modify evaluation metrics.
@@ -57,6 +59,8 @@ A fresh Python process reloads imported modules such as `dashboard/charts.py`. A
 Customer screens and CSV downloads exclude listing IDs, review IDs, cleaned text, source-schema details, and internal artifact metadata. `dashboard/presentation.py` projects the public review fields: product name, original review, stars, date, and rating-derived sentiment, with genuine model prediction/confidence fields only when available. Source identifiers and existing cleaned text remain in private backend data for provenance, preprocessing continuity, and future model integration; their source values are unchanged. Generic labels derived from an unknown listing ID appear as **Other product**.
 
 Global product, sentiment, and inclusive date filters update all exploration charts and totals. Clearing a product/sentiment/rating selection means no matches. Undated records can be included in totals but never contribute to time charts. Empty selections and unavailable optional data have explanatory states.
+
+Review length counts whitespace-separated words in each original customer comment, including zero for empty comments. Only aggregated length counts enter the chart. This does not use cleaned text, model tokens, or inferred linguistic annotations. The rating treemap counts eligible 1-, 2-, 4-, and 5-star reviews; three-star and invalid ratings remain excluded. Aspect-level charts from the layout reference are not generated because validated aspect annotations are not supplied. Search and star filters in the review explorer affect its table and download; the six summary charts continue to reflect the sidebar selection.
 
 The sidebar **Reset filters** button restores all products, both sentiments, the full observed date range, and inclusion of undated records. The selection summary shows the current review count, product count, and observed period. The focus-product dropdown changes its summary cards and trend; the comparison table/chart continue to reflect the sidebar selection.
 

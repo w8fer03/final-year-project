@@ -141,35 +141,52 @@ def trend(df, key, percentage=False, frequency="MS"):
         st.info("A sentiment trend needs valid review dates. Undated reviews remain available in the other analyses.")
 
 
-def render_overview(dataset, df):
+def render_overview(dataset, df, results):
     st.subheader("Dashboard Overview")
-    st.caption("Understand the collection before modelling: volume, rating-derived sentiment, and historical patterns.")
-    kpis(df)
-    date_caption(df)
-    if df.empty:
-        st.info("No reviews match the current filters. Expand the selection in the sidebar.")
-    else:
-        a, b = st.columns([1, 1.7], gap="medium")
-        with a:
-            with st.container(border=True, key="panel_distribution"):
-                panel_title("Sentiment distribution", "How customers rated their experience")
-                plot(charts.sentiment_donut(df), "overview_donut")
-        with b:
-            with st.container(border=True, key="panel_history"):
-                panel_title("Sentiment over time", "Monthly review volume across the selected period")
-                trend(df, "overview_trend")
-        a, b = st.columns([1.7, 1], gap="medium")
-        with a:
-            with st.container(border=True, key="panel_ratings"):
-                panel_title("Original star ratings", "The ratings behind your sentiment labels")
-                plot(charts.rating_bars(df), "overview_ratings")
-        with b:
-            with st.container(border=True, key="panel_method"):
-                panel_title("Understanding the results", "Explore the data before modelling")
-                st.markdown('<div class="method-row"><span class="sentiment-dot positive"></span><div><strong>4–5 stars</strong><p>Positive rating-derived sentiment</p></div></div><div class="method-row"><span class="sentiment-dot negative"></span><div><strong>1–2 stars</strong><p>Negative rating-derived sentiment</p></div></div>', unsafe_allow_html=True)
-                summary = sentiment_summary(df)
-                st.info(f"{summary['positive_percentage']:.2f}% positive · {summary['negative_percentage']:.2f}% negative in this selection.")
-                st.caption("The original class imbalance is preserved. Star labels can differ from the sentiment expressed in a comment. No balancing or training is performed here.")
+    st.caption("The complete picture in one place · All charts follow your sidebar filters.")
+    with st.container(key="analytics_board"):
+        kpis(df)
+        date_caption(df)
+        if df.empty:
+            st.info("No reviews match the current filters. Expand the selection in the sidebar.")
+        else:
+            # A compact two-column board keeps every analysis on the same page.
+            left, right = st.columns(2, gap="medium")
+            with left:
+                with st.container(border=True, key="panel_imbalance"):
+                    panel_title("Rating class imbalance", "Review counts by original star rating")
+                    plot(charts.rating_imbalance(df), "overview_imbalance")
+            with right:
+                with st.container(border=True, key="panel_lengths"):
+                    panel_title("Review length analysis", "Whitespace-separated words in original comments")
+                    plot(charts.review_length_chart(df), "overview_lengths")
+            left, right = st.columns(2, gap="medium")
+            with left:
+                with st.container(border=True, key="panel_ratings"):
+                    panel_title("Star rating distribution", "1–2 stars: negative · 4–5 stars: positive")
+                    plot(charts.rating_bars(df).update_layout(height=310), "overview_ratings")
+            with right:
+                with st.container(border=True, key="panel_comparison"):
+                    panel_title("Product sentiment comparison", "Positive and negative review counts by product")
+                    summary = public_product_summary(df)
+                    plot(charts.product_comparison(summary).update_layout(height=310), "overview_products")
+            left, right = st.columns([1, 1.4], gap="medium")
+            with left:
+                with st.container(border=True, key="panel_distribution"):
+                    panel_title("Overall sentiment", "Customer star ratings, before class balancing")
+                    plot(charts.sentiment_donut(df).update_layout(height=265), "overview_donut")
+            with right:
+                with st.container(border=True, key="panel_history"):
+                    panel_title("Sentiment over time", "Historical monthly review counts")
+                    if df.review_date.notna().any():
+                        plot(charts.trend_chart(df).update_layout(height=265), "overview_trend")
+                        st.caption(f"{int(df.review_date.isna().sum()):,} undated records omitted from this chart.")
+                    else:
+                        st.info("A sentiment trend needs valid review dates. Undated reviews remain in totals.")
+            with st.container(border=True, key="panel_product_table"):
+                panel_title("Product comparison", "Review totals and sentiment share for every selected product")
+                product_comparison_table(public_product_summary(df))
+            st.caption("The original class imbalance is preserved. Three-star and invalid ratings are excluded. Star labels may differ from comment sentiment; no balancing or training is performed.")
     with st.expander("About this dataset", expanded=False):
         st.caption("These quality counts describe the entire selected source file, before sidebar filters.")
         labels = {
@@ -184,6 +201,34 @@ def render_overview(dataset, df):
         st.dataframe(pd.DataFrame([{"Check": label, "Records": dataset.quality.get(key, 0)} for key, label in labels.items()]), hide_index=True, use_container_width=True)
         st.caption("The two provided CSVs are alternative versions, not concatenated. Ratings 1–2 → Negative (0), 4–5 → Positive (1). Three-star and invalid-rating records never enter binary statistics. Existing preprocessing exclusions are respected. Original CSVs are unchanged.")
 
+    st.divider()
+    render_explorer(df, results)
+    st.divider()
+    st.caption("Review filters do not change held-out evaluation results.")
+    render_performance(results)
+
+
+def public_product_summary(df):
+    """Only customer-facing aggregates may cross the chart and table boundary."""
+    return product_summary(df)[["product_name", "total_reviews", "positive_reviews", "negative_reviews", "positive_percentage", "negative_percentage"]]
+
+
+def product_comparison_table(summary):
+    # Project the display data so listing metadata cannot be re-enabled in the column menu.
+    st.dataframe(summary.rename(columns={
+        "product_name": "Product", "total_reviews": "Total reviews",
+        "positive_reviews": "Positive", "negative_reviews": "Negative",
+        "positive_percentage": "Positive %", "negative_percentage": "Negative %",
+    }), hide_index=True, use_container_width=True,
+        column_config={
+            "Product": st.column_config.TextColumn(width="large"),
+            "Total reviews": st.column_config.NumberColumn(width="small"),
+            "Positive": st.column_config.NumberColumn(width="small"),
+            "Negative": st.column_config.NumberColumn(width="small"),
+            "Positive %": st.column_config.ProgressColumn(format="%.2f%%", min_value=0, max_value=100, width="small"),
+            "Negative %": st.column_config.NumberColumn(format="%.2f%%", width="small"),
+        })
+
 
 def render_products(df):
     st.subheader("Product Sentiment Analysis")
@@ -191,9 +236,7 @@ def render_products(df):
     if df.empty:
         st.info("No reviews match the current filters.")
         return
-    display_columns = ["product_name", "total_reviews", "positive_reviews", "negative_reviews", "positive_percentage", "negative_percentage"]
-    # Keep source metadata out of both the chart input and the public table.
-    summary = product_summary(df)[display_columns]
+    summary = public_product_summary(df)
     options = ["All Products"] + sorted(df.product_name.unique().tolist())
     with st.container(border=True, key="panel_focus"):
         label, control = st.columns([1, 1.3])
@@ -216,20 +259,7 @@ def render_products(df):
         plot(charts.product_comparison(summary), "product_comparison")
     with st.container(border=True, key="panel_product_table"):
         panel_title("Product comparison", "A clear view of review counts and sentiment share")
-        # Project the display data so listing metadata cannot be re-enabled in the column menu.
-        st.dataframe(summary[display_columns].rename(columns={
-            "product_name": "Product", "total_reviews": "Total reviews",
-            "positive_reviews": "Positive", "negative_reviews": "Negative",
-            "positive_percentage": "Positive %", "negative_percentage": "Negative %",
-        }), hide_index=True, use_container_width=True,
-            column_config={
-                "Product": st.column_config.TextColumn(width="large"),
-                "Total reviews": st.column_config.NumberColumn(width="small"),
-                "Positive": st.column_config.NumberColumn(width="small"),
-                "Negative": st.column_config.NumberColumn(width="small"),
-                "Positive %": st.column_config.ProgressColumn(format="%.2f%%", min_value=0, max_value=100, width="small"),
-                "Negative %": st.column_config.NumberColumn(format="%.2f%%", width="small"),
-            })
+        product_comparison_table(summary)
         st.caption("Select a column heading to sort. Counts reflect your sidebar filters.")
     with st.container(border=True, key="panel_product_trend"):
         panel_title("Product sentiment over time", selection)
@@ -365,21 +395,8 @@ def render_performance(results):
 
 def main():
     with st.sidebar:
-        st.markdown(f'<div class="sidebar-brand"><span class="brand-mark">◈</span><div>{APP_NAME}<small>MALAYSIAN REVIEW ANALYTICS</small></div></div><div class="sidebar-label">EXPLORE SENTILOKAL</div>', unsafe_allow_html=True)
-        if st.session_state.get("navigation") not in PAGES:
-            st.session_state.navigation = "Home"
-        navigation_icons = ["home", "space_dashboard", "headphones", "forum", "query_stats"]
-        with st.container(key="workspace_navigation"):
-            for index, (destination, icon) in enumerate(zip(PAGES, navigation_icons)):
-                active = st.session_state.navigation == destination
-                st.button(
-                    destination, icon=f":material/{icon}:",
-                    key=f"nav_{index}", use_container_width=True,
-                    type="primary" if active else "tertiary",
-                    on_click=navigate, args=(destination,),
-                    help=f"Open {destination}",
-                )
-        page = st.session_state.navigation
+        st.markdown(f'<div class="sidebar-brand"><span class="brand-mark">◈</span><div>{APP_NAME}<small>MALAYSIAN REVIEW ANALYTICS</small></div></div><div class="sidebar-label">WORKSPACE</div>', unsafe_allow_html=True)
+        page = st.radio("Navigation", PAGES, key="navigation", label_visibility="collapsed")
     if page == "Home":
         render_home()
         return
@@ -446,7 +463,8 @@ def main():
         st.divider()
         st.markdown('<div class="sidebar-footnote"><strong>FYP research workspace</strong><br>Historical review analysis<br>DistilBERT + XGBoost · Integration pending</div>', unsafe_allow_html=True)
     filtered = filter_reviews(df, product_names=products, sentiments=sentiments, start=start, end=end, include_undated=include_undated)
-    st.markdown(f'<div class="workspace-bar"><div class="workspace-name"><span class="mini-mark">◈</span> {APP_NAME.upper()} WORKSPACE</div><span class="workspace-tag">BASEUS · SHOPEE MALAYSIA</span></div>', unsafe_allow_html=True)
+    if page != "Dashboard Overview":
+        st.markdown(f'<div class="workspace-bar"><div class="workspace-name"><span class="mini-mark">◈</span> {APP_NAME.upper()} WORKSPACE</div><span class="workspace-tag">BASEUS · SHOPEE MALAYSIA</span></div>', unsafe_allow_html=True)
     st.title(APP_NAME)
     st.markdown(f'<p class="hero-sub">{APP_DESCRIPTOR}</p>', unsafe_allow_html=True)
     st.markdown('<div class="status-note"><span class="status-badge">DATA EXPLORATION</span><span>Sentiment uses star ratings: <b>1–2★ Negative</b> · <b>4–5★ Positive</b>. Model predictions are separate.</span></div>', unsafe_allow_html=True)
@@ -457,7 +475,7 @@ def main():
     if results.errors:
         st.warning("Result file not loaded: some model results are unavailable. Valid results and review exploration remain accessible.")
     if page == "Dashboard Overview":
-        render_overview(dataset, filtered)
+        render_overview(dataset, filtered, results)
     elif page == "Product Sentiment Analysis":
         render_products(filtered)
     elif page == "Customer Review Explorer":

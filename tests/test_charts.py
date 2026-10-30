@@ -3,7 +3,35 @@ import unittest
 
 import pandas as pd
 
-from dashboard.charts import product_comparison
+from dashboard.charts import product_comparison, rating_imbalance, review_length_chart
+
+
+class OverviewAnalysisTests(unittest.TestCase):
+    def test_lengths_count_original_words_and_retain_empty_comments(self):
+        reviews = pd.DataFrame({"review_text": ["bagus sangat", "good  sound", "", None, "satu\nlagi\tperkataan"],
+                                "cleaned_text": ["PRIVATE_PREPROCESSING_VALUE"] * 5})
+        fig = review_length_chart(reviews)
+        self.assertEqual(list(fig.data[0].x), [0, 2, 3])
+        self.assertEqual(list(fig.data[0].y), [2, 2, 1])
+        for private in ["bagus sangat", "PRIVATE_PREPROCESSING_VALUE", "cleaned_text"]:
+            self.assertNotIn(private, fig.to_json())
+        self.assertEqual(reviews.review_text.iloc[0], "bagus sangat")
+
+    def test_rating_treemap_counts_observed_binary_ratings_only(self):
+        reviews = pd.DataFrame({"rating": [1, 2, 2, 4, 5, 5, 5]})
+        fig = rating_imbalance(reviews)
+        self.assertEqual(list(fig.data[0].labels), ["1 stars", "2 stars", "4 stars", "5 stars"])
+        self.assertEqual(list(fig.data[0].values), [1, 2, 1, 3])
+        self.assertEqual(sum(fig.data[0].values), len(reviews))
+        filtered = rating_imbalance(reviews[reviews.rating.eq(5)])
+        self.assertEqual(list(filtered.data[0].labels), ["5 stars"])
+        self.assertEqual(list(filtered.data[0].values), [3])
+        self.assertEqual(list(filtered.data[0].marker.colors), ["#FFE77A"])
+
+    def test_empty_length_and_rating_charts_are_serializable(self):
+        for fig in [review_length_chart(pd.DataFrame({"review_text": []})),
+                    rating_imbalance(pd.DataFrame({"rating": []}))]:
+            fig.to_json()
 
 
 class ProductComparisonTests(unittest.TestCase):

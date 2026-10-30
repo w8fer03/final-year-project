@@ -75,6 +75,41 @@ def rating_bars(df: pd.DataFrame) -> go.Figure:
     return _theme(fig)
 
 
+def rating_imbalance(df: pd.DataFrame) -> go.Figure:
+    """Treemap of eligible original ratings, with no source-row data in the figure."""
+    counts = df.rating.value_counts().reindex([1, 2, 4, 5], fill_value=0)
+    counts = counts[counts > 0]
+    fig = go.Figure(go.Treemap(
+        labels=[f"{rating} stars" for rating in counts.index],
+        parents=[""] * len(counts), values=counts.to_list(),
+        marker=dict(colors=[{1: "#A68000", 2: "#D9A900", 4: "#F0CD4E", 5: "#FFE77A"}[rating] for rating in counts.index],
+                    line=dict(color="white", width=3)),
+        textinfo="label+value", texttemplate="%{label}<br><b>%{value:,}</b>",
+        hovertemplate="%{label}<br>%{value:,} reviews · %{percentRoot:.1%}<extra></extra>",
+        pathbar=dict(visible=False), tiling=dict(pad=3),
+    ))
+    return _theme(fig, height=240).update_layout(margin=dict(l=0, r=0, t=0, b=0))
+
+
+def review_length_chart(df: pd.DataFrame) -> go.Figure:
+    """Whitespace-delimited word counts from original comments; empty text counts as zero.
+
+    This is descriptive length, not model tokens or a linguistic annotation.
+    Aggregate before constructing the chart so no customer text is serialized.
+    """
+    lengths = df.review_text.fillna("").astype(str).str.split().str.len()
+    counts = lengths.value_counts().sort_index()
+    fig = go.Figure(go.Scatter(
+        x=counts.index.to_list(), y=counts.to_list(), mode="lines",
+        line=dict(color=ACCENT, width=2.5), fill="tozeroy", fillcolor="rgba(217,169,0,.12)",
+        hovertemplate="%{x:,} words<br>%{y:,} reviews<extra></extra>",
+    ))
+    fig.update_layout(showlegend=False, xaxis_title="Original review length (words)",
+                      yaxis_title="Number of reviews")
+    fig.update_yaxes(rangemode="tozero")
+    return _theme(fig, height=240)
+
+
 def trend_chart(df: pd.DataFrame, frequency: str = "MS", percentage: bool = False) -> go.Figure:
     """Aggregate dated reviews, filling zero-count periods without invented dates.
 

@@ -63,8 +63,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual([item.value for item in app.exception], [])
 
     def navigate(self, app, name):
-        pages = ["Home", "Dashboard Overview", "Product Sentiment Analysis", "Customer Review Explorer", "Model Performance"]
-        next(item for item in app.button if item.key == f"nav_{pages.index(name)}").click().run()
+        widget(app.radio, "Navigation").set_value(name).run()
         self.assertNoException(app)
 
     def metrics(self, app):
@@ -129,7 +128,7 @@ class AppTests(unittest.TestCase):
             "Total reviews": "19,295", "Products": "5", "Positive reviews": "19,013",
             "Negative reviews": "282", "Positive share": "98.54%",
         })
-        self.assertEqual(len(app.get("plotly_chart")), 3)
+        self.assertEqual(len(app.get("plotly_chart")), 6)
         self.assertEqual(set(widget(app.multiselect, "Products").options), set(PRODUCT_GROUPS))
         self.assertNoPublicIdentifiers(app)
         for page in ["Home", "Product Sentiment Analysis", "Customer Review Explorer", "Model Performance"]:
@@ -139,6 +138,33 @@ class AppTests(unittest.TestCase):
         self.assertEqual(len(app.get("plotly_chart")), 0)
         self.assertTrue(any("Evaluation results are not available yet" in item.value for item in app.markdown))
         self.assertTrue(any("Baseline model evaluation results are not available" in item.value for item in app.info))
+
+    def test_overview_contains_all_analyses_and_review_tools_on_one_page(self):
+        app = self.app()
+        self.assertEqual(widget(app.radio, "Navigation").options, ["Home", "Dashboard Overview", "Product Sentiment Analysis", "Customer Review Explorer", "Model Performance"])
+        self.assertFalse(any((item.key or "").startswith("nav_") for item in app.button))
+        headings = {item.value for item in app.subheader}
+        self.assertTrue({"Dashboard Overview", "Customer Review Explorer", "Model Performance"}.issubset(headings))
+        specifications = [json.loads(item.proto.spec) for item in app.get("plotly_chart")]
+        self.assertEqual([spec["data"][0]["type"] for spec in specifications], ["treemap", "scatter", "bar", "bar", "pie", "scatter"])
+        self.assertEqual(sum(specifications[0]["data"][0]["values"]), 19295)
+        self.assertEqual(sum(specifications[1]["data"][0]["y"]), 19295)
+        tables = [item.value for item in app.dataframe]
+        comparison = next(table for table in tables if "Total reviews" in table)
+        self.assertEqual(comparison["Total reviews"].sum(), 19295)
+        widget(app.multiselect, "Products").set_value([C17]).run()
+        self.assertNoException(app)
+        self.assertEqual(self.metrics(app)["Total reviews"], "4,338")
+        specifications = [json.loads(item.proto.spec) for item in app.get("plotly_chart")]
+        self.assertEqual(sum(specifications[0]["data"][0]["values"]), 4338)
+        self.assertEqual(sum(specifications[1]["data"][0]["y"]), 4338)
+        with patch("streamlit.download_button", wraps=st.download_button) as export:
+            widget(app.text_input, "Search original reviews").set_value("BaGuS").run()
+            exported = pd.read_csv(io.BytesIO(export.call_args.args[1]))
+        self.assertPublicExport(exported)
+        self.assertTrue(exported.review_text.str.contains("bagus", case=False, regex=False).all())
+        self.assertEqual(set(exported.product_name), {C17})
+        self.assertNoPublicIdentifiers(app)
 
     def test_product_focus_and_percentage_yearly_trend(self):
         app = self.app()
