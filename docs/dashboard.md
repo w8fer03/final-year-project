@@ -29,15 +29,32 @@ No API keys, databases, or GPU are needed. Streamlit and Plotly are the only UI 
 
 The interface uses a Baseus-inspired yellow and charcoal theme, warm neutral backgrounds, white rounded panels, a yellow summary card with dark text, and consistent green/red sentiment indicators. Charts and filters remain native Streamlit/Plotly controls with keyboard focus states and a narrow-screen layout.
 
+## Updating a running dashboard
+
+From the repository directory in another terminal, update the dashboard branch using a fast-forward pull:
+
+```bash
+git switch codex/shopee-sentiment-dashboard
+git pull --ff-only origin codex/shopee-sentiment-dashboard
+```
+
+Then stop the running Streamlit process with **Ctrl+C** in its terminal and restart it from the repository directory:
+
+```bash
+.venv/bin/python -m streamlit run app.py
+```
+
+A fresh Python process reloads imported modules such as `dashboard/charts.py`. A browser refresh or Streamlit cache clear alone may leave an older imported chart module running. Restart the server after pulling changes if a chart still shows an old tooltip or layout.
+
 ## Home and four analytics pages
 
 - **Home (default):** an introduction to SentiLokal and five product cards. **Open dashboard**, **View products**, and **Explore product** lead to the analytics pages; a product card selects that product for exploration. Home works before a review dataset is supplied.
 - **Dashboard Overview:** filtered record/product counts, positive/negative shares, sentiment donut, original star ratings, historical monthly trends, class imbalance, source quality report.
 - **Product Sentiment Analysis:** compare the five named products using a six-column table (Product, Total reviews, Positive, Negative, Positive %, Negative %), focus-product KPIs, and monthly/yearly trends. Product names identify the collection throughout the customer interface.
-- **Customer Review Explorer:** literal case-insensitive Malay/English keyword search, star filters, paginated sortable tables, original and existing cleaned text, individual review details, filtered CSV download. Genuine stored predictions can add coverage and agreement filters later.
+- **Customer Review Explorer:** literal case-insensitive Malay/English keyword search, star filters, paginated sortable tables, original customer comments, individual review details, filtered CSV download. Genuine stored predictions can add coverage and agreement filters later.
 - **Model Performance:** informative empty states now. Valid held-out evaluation files automatically enable F1, accuracy, precision, recall, a confusion matrix, recorded configuration, and compatible baseline comparisons. Sidebar exploration filters never modify evaluation metrics.
 
-Customer screens and CSV downloads exclude listing IDs, review IDs, source-schema details, and internal artifact metadata. `dashboard/presentation.py` projects the public review fields: product name, original review, existing cleaned review, stars, date, and rating-derived sentiment, with genuine model prediction/confidence fields only when available. Source identifiers remain in private backend data for provenance and prediction joins. Generic labels derived from an unknown listing ID appear as **Other product**.
+Customer screens and CSV downloads exclude listing IDs, review IDs, cleaned text, source-schema details, and internal artifact metadata. `dashboard/presentation.py` projects the public review fields: product name, original review, stars, date, and rating-derived sentiment, with genuine model prediction/confidence fields only when available. Source identifiers and existing cleaned text remain in private backend data for provenance, preprocessing continuity, and future model integration; their source values are unchanged. Generic labels derived from an unknown listing ID appear as **Other product**.
 
 Global product, sentiment, and inclusive date filters update all exploration charts and totals. Clearing a product/sentiment/rating selection means no matches. Undated records can be included in totals but never contribute to time charts. Empty selections and unavailable optional data have explanatory states.
 

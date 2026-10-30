@@ -13,7 +13,7 @@ from dashboard.products import PRODUCT_GROUPS
 
 
 PUBLIC_REVIEW_COLUMNS = [
-    "product_name", "review_text", "cleaned_text", "rating", "review_date", "sentiment",
+    "product_name", "review_text", "rating", "review_date", "sentiment",
 ]
 OPTIONAL_PREDICTION_COLUMNS = ["predicted_sentiment", "confidence"]
 
@@ -53,8 +53,6 @@ def public_reviews(frame: pd.DataFrame) -> pd.DataFrame:
     ids = frame["product_id"] if "product_id" in frame else pd.Series(None, index=frame.index, dtype=object)
     output = frame.reindex(columns=PUBLIC_REVIEW_COLUMNS).copy()
     output["product_name"] = [public_product_name(name, listing_id) for name, listing_id in zip(names, ids)]
-    if "cleaned_text" not in frame:
-        output["cleaned_text"] = ""
     for column in OPTIONAL_PREDICTION_COLUMNS:
         if column in frame:
             output[column] = frame[column].copy()

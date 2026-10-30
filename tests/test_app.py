@@ -17,6 +17,7 @@ import pandas as pd
 import streamlit as st
 from streamlit.testing.v1 import AppTest
 
+from dashboard import charts
 from dashboard.data import filter_reviews, load_dataset, sentiment_summary
 from dashboard.products import PRODUCT_GROUPS
 
@@ -70,11 +71,12 @@ class AppTests(unittest.TestCase):
 
     def assertNoPublicIdentifiers(self, app):
         """Inspect serialized/displayed content, not hidden widget state values."""
-        forbidden_labels = {"Product ID", "Listing IDs", "Listings", "Source review ID", "Review ID", "Source columns"}
-        forbidden_columns = {"product_id", "product_ids", "total_listing_ids", "source_review_id", "review_id", "shop_id", "item_id", "cmtid"}
+        forbidden_labels = {"Product ID", "Listing IDs", "Listings", "Source review ID", "Review ID", "Source columns", "Existing cleaned review", "Compare existing cleaned text"}
+        forbidden_columns = {"product_id", "product_ids", "total_listing_ids", "source_review_id", "review_id", "shop_id", "item_id", "cmtid", "cleaned_text"}
         text = []
         for kind in ["markdown", "caption", "text", "info", "warning", "error", "success", "subheader", "title", "header", "code", "json"]:
             text.extend(str(item.value) for item in app.get(kind))
+        text.extend(item.label for item in app.expander)
         for table in app.dataframe:
             self.assertTrue((forbidden_labels | forbidden_columns).isdisjoint(table.value.columns))
             text.append(table.value.to_csv(index=False))
@@ -90,7 +92,7 @@ class AppTests(unittest.TestCase):
                 self.assertNotIn(listing_id, rendered)
 
     def assertPublicExport(self, exported):
-        allowed = {"product_name", "review_text", "cleaned_text", "rating", "review_date", "sentiment", "predicted_sentiment", "confidence"}
+        allowed = {"product_name", "review_text", "rating", "review_date", "sentiment", "predicted_sentiment", "confidence"}
         self.assertTrue(set(exported.columns).issubset(allowed))
         self.assertTrue({"product_name", "review_text", "rating", "review_date", "sentiment"}.issubset(exported.columns))
         for listing_ids in PRODUCT_GROUPS.values():
@@ -281,6 +283,56 @@ class AppTests(unittest.TestCase):
         widget(app.multiselect, "Rating-derived sentiment").set_value([]).run()
         self.assertNoException(app)
         self.assertEqual(self.metrics(app)["Total reviews"], "0")
+
+    def test_real_labelled_source_has_clean_public_tables_exports_and_hover_data(self):
+        app = self.app()
+        widget(app.selectbox, "Review dataset").set_value(LABELLED).run()
+        self.assertNoException(app)
+        self.assertEqual(self.metrics(app)["Total reviews"], "23,527")
+        with patch("dashboard.charts.product_comparison", wraps=charts.product_comparison) as render_chart:
+            self.navigate(app, "Product Sentiment Analysis")
+            chart_input = render_chart.call_args.args[0]
+        self.assertEqual(chart_input.columns.tolist(), ["product_name", "total_reviews", "positive_reviews", "negative_reviews", "positive_percentage", "negative_percentage"])
+        self.assertEqual(app.dataframe[0].value["Total reviews"].sum(), 23527)
+        self.assertNoPublicIdentifiers(app)
+        with patch("streamlit.download_button", wraps=st.download_button) as export:
+            self.navigate(app, "Customer Review Explorer")
+            exported = pd.read_csv(io.BytesIO(export.call_args.args[1]))
+        self.assertEqual(len(exported), 23527)
+        self.assertEqual(exported.columns.tolist(), ["product_name", "review_text", "rating", "review_date", "sentiment"])
+        self.assertPublicExport(exported)
+        self.assertNoPublicIdentifiers(app)
+        self.assertEqual(app.dataframe[0].value.columns.tolist(), ["Product", "Original review", "Stars", "Review date", "Rating-derived sentiment"])
+        labelled = load_dataset(LABELLED).reviews
+        self.assertEqual(exported.review_text.fillna("").tolist(), labelled.review_text.tolist())
+        widget(app.selectbox, "Open review details").set_value(labelled.review_id.iloc[0]).run()
+        self.assertNoException(app)
+        self.assertIn(labelled.review_text.iloc[0], [item.value for item in app.text])
+        self.assertNoPublicIdentifiers(app)
+
+    def test_internal_cleaned_text_sentinel_never_reaches_public_review_outputs(self):
+        fixture = self.dataset.records.head(3).copy()
+        sentinel = "INTERNAL_CLEANED_SENTINEL_NEVER_PUBLISH_7319"
+        for alias in ["cleaned_text", "cleaned_comment_v3", "cleaned_comment"]:
+            fixture[alias] = sentinel
+        source = self.results / "internal_cleaned_review_source.csv"
+        fixture.to_csv(source, index=False)
+        os.environ["SHOPEE_DATA_PATH"] = str(source)
+        app = self.app()
+        with patch("streamlit.download_button", wraps=st.download_button) as export:
+            self.navigate(app, "Customer Review Explorer")
+            payload = export.call_args.args[1]
+            exported = pd.read_csv(io.BytesIO(payload))
+        self.assertPublicExport(exported)
+        self.assertEqual(len(exported), 3)
+        self.assertEqual(exported.review_text.tolist(), fixture.review_text.tolist())
+        self.assertNotIn(sentinel, payload.decode("utf-8-sig"))
+        self.assertNoPublicIdentifiers(app)
+        for kind in ["text", "markdown", "caption"]:
+            self.assertFalse(any(sentinel in str(item.value) for item in app.get(kind)))
+        for table in app.dataframe:
+            self.assertNotIn(sentinel, table.value.to_csv(index=False))
+        self.assertIn(fixture.review_text.iloc[0], [item.value for item in app.text])
 
     def test_future_valid_held_out_results_appear_and_malformed_are_reported(self):
         # Test-only labels exercise a known asymmetric confusion matrix.

@@ -117,7 +117,7 @@ def render_home():
     for column, (number, title, text) in zip(st.columns(3), [
         ("01", "See the overview", "Understand review volume, star ratings, and sentiment across the collection."),
         ("02", "Compare the products", "Explore differences in customer ratings and historical trends."),
-        ("03", "Read the feedback", "Search actual comments and compare the original and existing cleaned text."),
+        ("03", "Read the feedback", "Search and read the original customer comments in their own words."),
     ]):
         with column:
             st.markdown(f'<div class="journey-card"><span>{number}</span><h3>{title}</h3><p>{text}</p></div>', unsafe_allow_html=True)
@@ -182,7 +182,7 @@ def render_overview(dataset, df):
             "missing_product_ids": "Records without product information",
         }
         st.dataframe(pd.DataFrame([{"Check": label, "Records": dataset.quality.get(key, 0)} for key, label in labels.items()]), hide_index=True, use_container_width=True)
-        st.caption("The two provided CSVs are alternative versions, not concatenated. Ratings 1–2 → Negative (0), 4–5 → Positive (1). Three-star and invalid-rating records never enter binary statistics. Existing preprocessing exclusions are respected. Original CSVs and cleaned text are unchanged.")
+        st.caption("The two provided CSVs are alternative versions, not concatenated. Ratings 1–2 → Negative (0), 4–5 → Positive (1). Three-star and invalid-rating records never enter binary statistics. Existing preprocessing exclusions are respected. Original CSVs are unchanged.")
 
 
 def render_products(df):
@@ -191,7 +191,9 @@ def render_products(df):
     if df.empty:
         st.info("No reviews match the current filters.")
         return
-    summary = product_summary(df)
+    display_columns = ["product_name", "total_reviews", "positive_reviews", "negative_reviews", "positive_percentage", "negative_percentage"]
+    # Keep source metadata out of both the chart input and the public table.
+    summary = product_summary(df)[display_columns]
     options = ["All Products"] + sorted(df.product_name.unique().tolist())
     with st.container(border=True, key="panel_focus"):
         label, control = st.columns([1, 1.3])
@@ -215,7 +217,6 @@ def render_products(df):
     with st.container(border=True, key="panel_product_table"):
         panel_title("Product comparison", "A clear view of review counts and sentiment share")
         # Project the display data so listing metadata cannot be re-enabled in the column menu.
-        display_columns = ["product_name", "total_reviews", "positive_reviews", "negative_reviews", "positive_percentage", "negative_percentage"]
         st.dataframe(summary[display_columns].rename(columns={
             "product_name": "Product", "total_reviews": "Total reviews",
             "positive_reviews": "Positive", "negative_reviews": "Negative",
@@ -241,7 +242,7 @@ def render_products(df):
 def review_table(df):
     return public_reviews(df).rename(columns={
         "product_name": "Product",
-        "review_text": "Original review", "cleaned_text": "Existing cleaned review", "rating": "Stars", "review_date": "Review date",
+        "review_text": "Original review", "rating": "Stars", "review_date": "Review date",
         "sentiment": "Rating-derived sentiment", "predicted_sentiment": "Model prediction", "confidence": "Model confidence",
     })
 
@@ -314,12 +315,6 @@ def render_explorer(df, results):
                 st.write(f"Recorded model confidence: {row.confidence:.3f}")
         else:
             st.caption("Model prediction: not available")
-        with st.expander("Compare existing cleaned text"):
-            if row.cleaned_text.strip():
-                st.text(row.cleaned_text)
-                st.caption("Read directly from the existing dataset. The dashboard does not run or change preprocessing.")
-            else:
-                st.info("Cleaned text is not available for this review.")
     with st.expander("Linguistic characteristics"):
         st.info("Validated linguistic annotations for code-mixing, slang, abbreviations, emojis, and informal spelling are not available. No language classifications or frequencies are inferred.")
         st.caption("Preprocessing diagnostics, when present in the source, are not treated as validated linguistic annotations. Monolingual reviews remain included.")
@@ -458,7 +453,7 @@ def main():
         st.caption("Review filters do not change held-out evaluation results.")
         render_performance(results)
     st.divider()
-    st.caption(f"{APP_NAME} · Historical Shopee review analysis · Original comments and existing cleaned text preserved")
+    st.caption(f"{APP_NAME} · Historical Shopee review analysis · Original customer comments preserved")
 
 
 if __name__ == "__main__":

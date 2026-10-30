@@ -1,4 +1,4 @@
-"""Customer output must not reveal internal source identifiers."""
+"""Customer output excludes source identifiers and internal cleaned text."""
 
 import io
 import unittest
@@ -20,7 +20,8 @@ class PresentationTests(unittest.TestCase):
             "cmtid": ["source-review-a", "source-review-b"],
             "product_name": ["Baseus H17 Encok 3.5mm Wired Earphone", "Product 98765432101"],
             "review_text": ["Sound bagus", "Rosak"],
-            "cleaned_text": ["Sound bagus", "Rosak"],
+            "cleaned_text": ["INTERNAL_CLEANED_SENTINEL_A", "INTERNAL_CLEANED_SENTINEL_B"],
+            "cleaned_comment_v3": ["INTERNAL_V3_SENTINEL_A", "INTERNAL_V3_SENTINEL_B"],
             "rating": [5, 1],
             "review_date": pd.to_datetime(["2026-01-01", "2026-01-02"]),
             "sentiment": ["Positive", "Negative"],
@@ -28,12 +29,13 @@ class PresentationTests(unittest.TestCase):
         }).set_index("review_id", drop=False)
         before = source.copy(deep=True)
         customer = public_reviews(source)
+        self.assertEqual(PUBLIC_REVIEW_COLUMNS, ["product_name", "review_text", "rating", "review_date", "sentiment"])
         self.assertEqual(customer.columns.tolist(), PUBLIC_REVIEW_COLUMNS)
         self.assertEqual(customer.index.tolist(), [0, 1])
         self.assertIsNone(customer.index.name)
         self.assertEqual(customer.product_name.tolist(), ["Baseus H17 Encok 3.5mm Wired Earphone", "Other product"])
         csv = customer.to_csv(index=False)
-        for identifier in ["14750761025", "98765432101", "internal-review-a", "source-review-a", "internal-shop", "private-a"]:
+        for identifier in ["14750761025", "98765432101", "internal-review-a", "source-review-a", "internal-shop", "private-a", "cleaned_text", "cleaned_comment_v3", "INTERNAL_CLEANED_SENTINEL", "INTERNAL_V3_SENTINEL"]:
             self.assertNotIn(identifier, csv)
         exported = pd.read_csv(io.StringIO(csv))
         self.assertEqual(exported.columns.tolist(), PUBLIC_REVIEW_COLUMNS)
@@ -61,7 +63,7 @@ class PresentationTests(unittest.TestCase):
         source = pd.DataFrame({"product_name": ["Baseus H19"], "review_text": ["bagus"],
                                "sentiment": ["Positive"], "product_id": ["25502231352"]})
         self.assertEqual(public_reviews(source).columns.tolist(), PUBLIC_REVIEW_COLUMNS)
-        self.assertEqual(public_reviews(source).cleaned_text.tolist(), [""])
+        self.assertNotIn("cleaned_text", public_reviews(source).columns)
         predictions = source.assign(predicted_sentiment="Negative", confidence=.71)
         projected = public_reviews(predictions)
         self.assertEqual(projected.columns.tolist(), PUBLIC_REVIEW_COLUMNS + ["predicted_sentiment", "confidence"])
