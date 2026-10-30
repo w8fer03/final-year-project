@@ -1,6 +1,7 @@
 # Future result and model integration
 
-Stage 1 does not train, balance, infer, or download a model. No result files are
+SentiLokal – Malaysian E-Commerce Review Sentiment Analytics does not train,
+balance, infer, or download a model during Stage 1. No result files are
 bundled. The dashboard discovers real files under `results/` on each rerun.
 Validation errors are displayed rather than replaced with example results.
 
@@ -8,9 +9,9 @@ Validation errors are displayed rather than replaced with example results.
 
 Save `results/predictions.csv` with columns:
 
-- `review_id`: canonical ID exported by Customer Review Explorer. Use the exact
-  selected dataset's export: original `cmtid` values may repeat and the loader
-  disambiguates these rows. Never join on comment text or row position.
+- `review_id`: private canonical ID obtained through the owner-only local export
+  below. Use the exact selected dataset: original `cmtid` values may repeat and
+  the loader disambiguates these rows. Never join on comment text or row position.
 - `predicted_sentiment`: actual model output, `0`/`1` or `Negative`/`Positive`.
 - `confidence` (optional): actual probability for the selected class in [0, 1].
 
@@ -19,6 +20,34 @@ reports coverage; prediction-only filtering excludes rows without a prediction.
 Extra IDs are permitted because the source may include records excluded from the
 binary dashboard. Files with no matching IDs are rejected. Uploading a different
 dataset does not authorize a positional prediction join.
+
+### Owner-only review-key export
+
+Customer screens and CSV downloads intentionally exclude `review_id`,
+`source_review_id`, and `product_id`. Do not add an owner export or source-schema
+panel to the public Streamlit pages. An owner can prepare a private local key
+file from the repository root without changing the original dataset:
+
+```python
+from pathlib import Path
+from dashboard.data import load_dataset
+
+dataset = load_dataset(Path("data/dataset_preprocessed_v3_clean.csv"))
+keys = dataset.reviews[
+    ["review_id", "product_id", "product_name", "review_text", "sentiment"]
+].copy()
+destination = Path("outputs/dashboard_review_keys.csv")
+destination.parent.mkdir(parents=True, exist_ok=True)
+keys.to_csv(destination, index=False, encoding="utf-8-sig")
+```
+
+`outputs/` and CSV files are ignored by Git. Keep this file owner-only and local;
+it contains source identifiers and review text. The example reads the source and
+writes a separate file, with no balancing, model training, preprocessing rerun,
+or original CSV rewrite. Use the exact source dataset and its stable review IDs
+when generating genuine predictions later. The customer-facing projection in
+`dashboard/presentation.py` continues to exclude these identifiers even after
+validated predictions are joined.
 
 ## Held-out evaluation
 
@@ -41,7 +70,9 @@ Choose either input route:
    the experimental provenance, which the file author must establish.
 
 Optional metadata such as `checkpoint`, `training_split`, `cross_validation`,
-`training_run_id`, and limitations is displayed only when recorded. Baseline
+`training_run_id`, and limitations may be retained in the private result files.
+The public page shows a small readable evaluation summary, not raw source or
+artifact identifiers. Baseline
 comparison requires the same test_set_id, sample count, and full evaluation
 configuration. If both inputs include test review IDs, membership must agree.
 Use the same evaluation configuration for all compared models. Scores from

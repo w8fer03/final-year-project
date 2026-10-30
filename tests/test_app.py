@@ -51,9 +51,11 @@ class AppTests(unittest.TestCase):
         self.environment.stop()
         self.temp.cleanup()
 
-    def app(self):
+    def app(self, page="Dashboard Overview"):
         app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=30).run()
         self.assertNoException(app)
+        if page != "Home":
+            self.navigate(app, page)
         return app
 
     def assertNoException(self, app):
@@ -66,6 +68,58 @@ class AppTests(unittest.TestCase):
     def metrics(self, app):
         return {item.label: item.value for item in app.metric}
 
+    def assertNoPublicIdentifiers(self, app):
+        """Inspect serialized/displayed content, not hidden widget state values."""
+        forbidden_labels = {"Product ID", "Listing IDs", "Listings", "Source review ID", "Review ID", "Source columns"}
+        forbidden_columns = {"product_id", "product_ids", "total_listing_ids", "source_review_id", "review_id", "shop_id", "item_id", "cmtid"}
+        text = []
+        for kind in ["markdown", "caption", "text", "info", "warning", "error", "success", "subheader", "title", "header", "code", "json"]:
+            text.extend(str(item.value) for item in app.get(kind))
+        for table in app.dataframe:
+            self.assertTrue((forbidden_labels | forbidden_columns).isdisjoint(table.value.columns))
+            text.append(table.value.to_csv(index=False))
+        for kind in ["selectbox", "multiselect", "radio"]:
+            for item in app.get(kind):
+                text.extend(str(option) for option in item.options)
+        text.extend(chart.proto.spec for chart in app.get("plotly_chart"))
+        rendered = "\n".join(text)
+        for label in forbidden_labels | forbidden_columns:
+            self.assertNotIn(label, rendered)
+        for listing_ids in PRODUCT_GROUPS.values():
+            for listing_id in listing_ids:
+                self.assertNotIn(listing_id, rendered)
+
+    def assertPublicExport(self, exported):
+        allowed = {"product_name", "review_text", "cleaned_text", "rating", "review_date", "sentiment", "predicted_sentiment", "confidence"}
+        self.assertTrue(set(exported.columns).issubset(allowed))
+        self.assertTrue({"product_name", "review_text", "rating", "review_date", "sentiment"}.issubset(exported.columns))
+        for listing_ids in PRODUCT_GROUPS.values():
+            for listing_id in listing_ids:
+                self.assertNotIn(listing_id, exported.to_csv(index=False))
+
+    def test_home_landing_and_primary_navigation_actions(self):
+        app = self.app(page="Home")
+        self.assertEqual(widget(app.radio, "Navigation").value, "Home")
+        self.assertNoPublicIdentifiers(app)
+        widget(app.button, "Open dashboard").click().run()
+        self.assertNoException(app)
+        self.assertEqual(widget(app.radio, "Navigation").value, "Dashboard Overview")
+        self.assertEqual(self.metrics(app)["Total reviews"], "19,295")
+        self.navigate(app, "Home")
+        widget(app.button, "View products").click().run()
+        self.assertNoException(app)
+        self.assertEqual(widget(app.radio, "Navigation").value, "Product Sentiment Analysis")
+        self.assertEqual(len(app.dataframe[0].value), 5)
+        self.assertNoPublicIdentifiers(app)
+        self.navigate(app, "Home")
+        next(item for item in app.button if item.key == "explore_baseus-c17").click().run()
+        self.assertNoException(app)
+        self.assertEqual(widget(app.radio, "Navigation").value, "Product Sentiment Analysis")
+        self.assertEqual(widget(app.multiselect, "Products").value, [C17])
+        self.assertEqual(widget(app.selectbox, "Focus product").value, C17)
+        self.assertEqual(self.metrics(app)["Total reviews"], "4,338")
+        self.assertNoPublicIdentifiers(app)
+
     def test_all_pages_and_stage_one_empty_evaluation(self):
         app = self.app()
         self.assertEqual(self.metrics(app), {
@@ -74,8 +128,10 @@ class AppTests(unittest.TestCase):
         })
         self.assertEqual(len(app.get("plotly_chart")), 3)
         self.assertEqual(set(widget(app.multiselect, "Products").options), set(PRODUCT_GROUPS))
-        for page in ["Product Sentiment Analysis", "Customer Review Explorer", "Model Performance"]:
+        self.assertNoPublicIdentifiers(app)
+        for page in ["Home", "Product Sentiment Analysis", "Customer Review Explorer", "Model Performance"]:
             self.navigate(app, page)
+            self.assertNoPublicIdentifiers(app)
         self.assertEqual(len(app.metric), 0)
         self.assertEqual(len(app.get("plotly_chart")), 0)
         self.assertTrue(any("Evaluation results are not available yet" in item.value for item in app.markdown))
@@ -184,7 +240,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(len(buttons), 1)
         self.assertTrue(buttons[0].proto.url.endswith(".csv"))
         details = widget(app.selectbox, "Open review details")
-        details.set_value(table["Review ID"].iloc[-1]).run()
+        details.set_value(expected.review_id.iloc[len(table) - 1]).run()
         self.assertNoException(app)
         self.assertIn(table["Original review"].iloc[-1], [item.value for item in app.text])
         self.assertTrue(any("Model prediction: not available" in item.value for item in app.caption))
@@ -193,26 +249,26 @@ class AppTests(unittest.TestCase):
         self.assertEqual(len(app.dataframe), 0)
         self.assertTrue(any("No matching reviews" in item.value for item in app.info))
 
-    def test_group_filter_export_and_details_preserve_source_listing_identity(self):
+    def test_group_filter_export_and_details_show_product_names_without_identifiers(self):
         app = self.app()
         widget(app.multiselect, "Products").set_value([C17]).run()
         with patch("streamlit.download_button", wraps=st.download_button) as export:
             self.navigate(app, "Customer Review Explorer")
-            exported = pd.read_csv(io.BytesIO(export.call_args.args[1]), dtype={"review_id": str, "product_id": str})
+            exported = pd.read_csv(io.BytesIO(export.call_args.args[1]))
         expected = self.dataset.reviews[self.dataset.reviews.product_name.eq(C17)]
         self.assertEqual(len(exported), 4338)
-        self.assertEqual(set(exported.product_id), set(PRODUCT_GROUPS[C17]))
+        self.assertPublicExport(exported)
         self.assertEqual(set(exported.product_name), {C17})
-        self.assertEqual(exported.review_id.tolist(), expected.review_id.tolist())
+        self.assertEqual(exported.review_text.tolist(), expected.review_text.tolist())
         table = app.dataframe[0].value
         self.assertEqual(set(table["Product"]), {C17})
-        self.assertTrue(set(table["Product ID"]).issubset(PRODUCT_GROUPS[C17]))
+        self.assertNoPublicIdentifiers(app)
         review = table.iloc[-1]
-        widget(app.selectbox, "Open review details").set_value(review["Review ID"]).run()
+        widget(app.selectbox, "Open review details").set_value(expected.review_id.iloc[len(table) - 1]).run()
         self.assertNoException(app)
         details_text = "\n".join(item.value for elements in [app.markdown, app.caption, app.text] for item in elements)
         self.assertIn(f"Product: {C17}", details_text)
-        self.assertIn(review["Product ID"], details_text)
+        self.assertNoPublicIdentifiers(app)
         self.assertIn(review["Original review"], [item.value for item in app.text])
 
     def test_switch_to_labelled_source_and_empty_sentiment_filter(self):
@@ -251,7 +307,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(len(app.get("plotly_chart")), 0)
         self.assertTrue(any("Result file not loaded" in item.value for item in app.warning))
 
-    def test_validated_predictions_partial_coverage_agreement_and_canonical_export(self):
+    def test_validated_predictions_use_internal_ids_and_public_export_omits_identifiers(self):
         first, second = self.dataset.reviews.iloc[:2].itertuples(index=False)
         pd.DataFrame({"review_id": [first.review_id, second.review_id],
                       "predicted_sentiment": [first.sentiment, "Positive" if second.sentiment == "Negative" else "Negative"],
@@ -259,24 +315,26 @@ class AppTests(unittest.TestCase):
         app = self.app()
         with patch("streamlit.download_button", wraps=st.download_button) as export:
             self.navigate(app, "Customer Review Explorer")
-            exported = pd.read_csv(io.BytesIO(export.call_args.args[1]), dtype={"review_id": str})
-        self.assertIn("review_id", exported.columns)
+            exported = pd.read_csv(io.BytesIO(export.call_args.args[1]))
+        self.assertPublicExport(exported)
         self.assertIn("predicted_sentiment", exported.columns)
         self.assertEqual(len(exported), len(self.dataset.reviews))
         self.assertEqual(exported.predicted_sentiment.notna().sum(), 2)
-        self.assertEqual(exported.review_id.iloc[0], first.review_id)
+        self.assertEqual(exported.review_text.iloc[0], first.review_text)
         self.assertTrue(any("Prediction coverage: 2 of 19,295" in item.value for item in app.caption))
         self.assertIn("Model confidence", app.dataframe[0].value.columns)
 
         widget(app.selectbox, "Prediction agreement with star label").set_value("Matches rating label").run()
         self.assertNoException(app)
         table = app.dataframe[0].value
-        self.assertEqual(table["Review ID"].tolist(), [first.review_id])
+        self.assertEqual(table["Original review"].tolist(), [first.review_text])
+        self.assertNoPublicIdentifiers(app)
         self.assertEqual(table["Model prediction"].tolist(), [first.sentiment])
 
         widget(app.selectbox, "Prediction agreement with star label").set_value("Differs from rating label").run()
         self.assertNoException(app)
-        self.assertEqual(app.dataframe[0].value["Review ID"].tolist(), [second.review_id])
+        self.assertEqual(app.dataframe[0].value["Original review"].tolist(), [second.review_text])
+        self.assertNoPublicIdentifiers(app)
 
         widget(app.selectbox, "Prediction agreement with star label").set_value("No prediction").run()
         self.assertNoException(app)
@@ -312,6 +370,24 @@ class AppTests(unittest.TestCase):
         self.assertEqual(table["Model confidence"].dropna().tolist(), [.8])
         self.assertTrue(any("Prediction coverage: 1 of 3" in item.value for item in app.caption))
         self.assertFalse(any("Predictions could not be joined" in item.value for item in app.warning))
+
+
+class HomeWithoutDatasetTests(unittest.TestCase):
+    def test_home_renders_without_a_configured_review_file(self):
+        # An unavailable configured source must not block the public landing
+        # page. No repository files are removed or replaced by this check.
+        with tempfile.TemporaryDirectory() as folder:
+            missing = Path(folder) / "unavailable-reviews.csv"
+            with patch.dict(os.environ, {"SHOPEE_DATA_PATH": str(missing), "SHOPEE_RESULTS_DIR": folder}):
+                app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=30).run()
+                self.assertEqual([item.value for item in app.exception], [])
+                self.assertEqual(widget(app.radio, "Navigation").value, "Home")
+                self.assertEqual(len(app.error), 0)
+                self.assertFalse(any(item.label == "Review dataset" for item in app.selectbox))
+                self.assertEqual(sum(item.label == "Explore product" for item in app.button), 5)
+                widget(app.button, "Open dashboard").click().run()
+                self.assertEqual([item.value for item in app.exception], [])
+                self.assertTrue(any("configured review dataset is unavailable" in item.value for item in app.error))
 
 
 if __name__ == "__main__":

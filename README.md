@@ -99,9 +99,9 @@ To run the highly optimized Version 2 immediately:
 
 ## SentiLokal – Malaysian E-Commerce Review Sentiment Analytics
 
-SentiLokal is a Streamlit dashboard for Malaysian e-commerce review sentiment analytics. It explores the supplied review data using star-rating-derived sentiment, with five named products across 17 listing IDs. It includes product comparisons, historical trends, a review explorer, and empty model-evaluation states until valid held-out results are provided.
+SentiLokal is a Streamlit dashboard for Malaysian e-commerce review sentiment analytics. It opens on a Home landing page with five product cards, followed by four analytics pages for overview, product comparisons, customer review exploration, and future model performance. Current insights use star-rating-derived sentiment; model-evaluation states remain empty until valid held-out results are supplied. Source listing and review IDs stay internal and are excluded from customer screens and CSV downloads.
 
-See [the dashboard guide](docs/dashboard.md) for setup, dataset provenance, all four pages, and future model integration. From the repository root:
+See [the dashboard guide](docs/dashboard.md) for setup, local product photographs, dataset provenance, navigation, and future model integration. Product photographs use a local validated catalog; verified photos are currently unavailable because official Baseus/Shopee access returned HTTP 403. The cards show an honest empty-photo state. From the repository root:
 
 Dashboard CSV inputs stay local and are not included in Git. Supply them through the sidebar uploader or place them in `data/`.
 

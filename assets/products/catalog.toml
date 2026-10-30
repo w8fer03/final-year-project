@@ -1,0 +1,29 @@
+# Local product photos only. Paths are relative to this directory.
+# Empty paths intentionally display "Product photo not available".
+# Add an actual verified Baseus/Shopee photo and its original HTTPS source URL.
+# Do not insert invented source URLs, unrelated products or remote image paths.
+
+[products.baseus-h17]
+name = "Baseus H17 Encok 3.5mm Wired Earphone"
+image_path = ""
+source_url = ""
+
+[products.baseus-c17]
+name = "Baseus C17 Type-C Earphones"
+image_path = ""
+source_url = ""
+
+[products.baseus-cz11-hz11]
+name = "Baseus Encok CZ11 / HZ11"
+image_path = ""
+source_url = ""
+
+[products.baseus-wm01]
+name = "Baseus WM01 TWS Wireless Earphones"
+image_path = ""
+source_url = ""
+
+[products.baseus-h19]
+name = "Baseus H19"
+image_path = ""
+source_url = ""
