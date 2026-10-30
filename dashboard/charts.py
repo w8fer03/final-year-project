@@ -11,7 +11,7 @@ import plotly.graph_objects as go
 
 POSITIVE = "#0E9279"
 NEGATIVE = "#DC6277"
-ACCENT = "#187D8D"
+ACCENT = "#D9A900"
 COLORS = {"Positive": POSITIVE, "Negative": NEGATIVE}
 SENTIMENTS = ("Positive", "Negative")
 
@@ -20,17 +20,17 @@ def _theme(fig: go.Figure, *, height: int = 355) -> go.Figure:
     fig.update_layout(
         template="plotly_white",
         height=height,
-        font=dict(family="Inter, Arial, sans-serif", size=12, color="#60736E"),
+        font=dict(family="Inter, Arial, sans-serif", size=12, color="#68665D"),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=12, r=20, t=46, b=18),
         legend=dict(
             orientation="h", yanchor="bottom", y=1.06, x=0, title=None,
-            font=dict(size=12, color="#50665F"), itemsizing="constant",
+            font=dict(size=12, color="#57554D"), itemsizing="constant",
         ),
         hoverlabel=dict(
-            bgcolor="white", bordercolor="#DCE9E5",
-            font=dict(family="Inter, Arial, sans-serif", size=13, color="#264D44"),
+            bgcolor="white", bordercolor="#E9E3D0",
+            font=dict(family="Inter, Arial, sans-serif", size=13, color="#292820"),
         ),
         hovermode=fig.layout.hovermode or "closest",
         colorway=[POSITIVE, NEGATIVE, ACCENT],
@@ -38,12 +38,12 @@ def _theme(fig: go.Figure, *, height: int = 355) -> go.Figure:
     )
     fig.update_xaxes(
         showgrid=False, zeroline=False, automargin=True,
-        title_font=dict(size=12, color="#71847D"), tickfont=dict(size=11),
+        title_font=dict(size=12, color="#7D796B"), tickfont=dict(size=11),
         ticks="", showline=False,
     )
     fig.update_yaxes(
-        gridcolor="#EDF3F0", gridwidth=1, zeroline=False, automargin=True,
-        title_font=dict(size=12, color="#71847D"), tickfont=dict(size=11),
+        gridcolor="#F1EEE3", gridwidth=1, zeroline=False, automargin=True,
+        title_font=dict(size=12, color="#7D796B"), tickfont=dict(size=11),
         ticks="", showline=False,
     )
     return fig
@@ -58,7 +58,7 @@ def sentiment_donut(df: pd.DataFrame) -> go.Figure:
         textinfo="percent", textposition="outside", textfont=dict(size=13),
         hovertemplate="%{label}<br>%{value:,} reviews · %{percent}<extra></extra>",
     ))
-    fig.add_annotation(x=.5, y=.5, text=f"<b>{int(counts.sum()):,}</b><br><span style='font-size:12px;color:#71847D'>reviews</span>", showarrow=False, font=dict(size=28, color="#244C42"))
+    fig.add_annotation(x=.5, y=.5, text=f"<b>{int(counts.sum()):,}</b><br><span style='font-size:12px;color:#7D796B'>reviews</span>", showarrow=False, font=dict(size=28, color="#292820"))
     return _theme(fig)
 
 
@@ -140,7 +140,7 @@ def product_comparison(summary: pd.DataFrame) -> go.Figure:
         xaxis_title="Number of reviews", yaxis_title="Product",
     )
     _theme(fig, height=max(380, len(summary) * 70 + 75))
-    fig.update_xaxes(showgrid=True, gridcolor="#EDF3F0", rangemode="tozero")
+    fig.update_xaxes(showgrid=True, gridcolor="#F1EEE3", rangemode="tozero")
     fig.update_yaxes(
         type="category", showgrid=False, autorange="reversed",
         categoryorder="array", categoryarray=names,
@@ -154,7 +154,7 @@ def confusion_heatmap(matrix: list[list[int]]) -> go.Figure:
     names = [["True negative", "False positive"], ["False negative", "True positive"]]
     fig = go.Figure(go.Heatmap(
         z=matrix, x=["Negative (0)", "Positive (1)"], y=["Negative (0)", "Positive (1)"],
-        colorscale=[[0, "#EFF8F4"], [1, ACCENT]], customdata=names,
+        colorscale=[[0, "#FFFBE5"], [0.5, "#F0CD4E"], [1, "#76600D"]], customdata=names,
         text=matrix, texttemplate="%{text:,}", textfont=dict(size=23),
         hovertemplate="%{customdata}<br>Actual: %{y}<br>Predicted: %{x}<br>%{z:,} reviews<extra></extra>",
         colorbar=dict(title="Count", thickness=12), xgap=5, ygap=5,
