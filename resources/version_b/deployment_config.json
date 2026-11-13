@@ -1,0 +1,39 @@
+{
+  "dataset": "Version B CLDR only",
+  "max_length": 256,
+  "negative_label": 0,
+  "positive_label": 1,
+  "pretrained_model_id": "distilbert/distilbert-base-multilingual-cased",
+  "fine_tuned_checkpoint_folder": "fine_tuned_distilbert_80_20_full_training_only",
+  "dashboard_default_architecture": "finetuned_hybrid",
+  "model_selection_basis": "training-only CV; no held-out results used",
+  "models": {
+    "frozen_hybrid": {
+      "model_file": "xgb_frozen_hybrid.json",
+      "threshold": 0.07502188896358628
+    },
+    "tfidf_xgb": {
+      "model_file": "xgb_tf_idf.json",
+      "vectorizer_file": "tfidf_vectorizer.joblib",
+      "threshold": 0.28
+    },
+    "finetuned_classifier": {
+      "model_file": "fine_tuned_distilbert_80_20_full_training_only",
+      "threshold": 0.060000000000000005
+    },
+    "finetuned_hybrid": {
+      "model_file": "xgb_finetuned_hybrid.json",
+      "threshold": 0.26
+    }
+  },
+  "training_source_sha256": "1f0803d6fcf57b05e4186fda3fd8e4c94233d39a39ad71336a95d147cb3fceb5",
+  "locked_pretest_configuration_sha256": "0e439fa4efefe4987e4a8df3ecbe443470e170d173a92ec3015cddc47f19a15b",
+  "score_calibrated": false,
+  "model_artifact_sha256": {
+    "xgb_frozen_hybrid.json": "4cf624b1338303ce9485c39960c59077dce9598eee3c98fa5615247a2e830705",
+    "xgb_tf_idf.json": "c36eed65819c60bfc2740310e391f7074451df91eaf98294d57ac165acfb480a",
+    "xgb_finetuned_hybrid.json": "33520a87ab83eb0eba13c8b1d4216dc684bcd31343241a3338f87a5938cca546",
+    "tfidf_vectorizer.joblib": "9027effa8cf60f341697a4ca8cc840d69fc881d43a1860c93152c59a6cb95cb4",
+    "model.safetensors": "6c97a6084994017eccfc96a2438a1c5fd29f87677c9c52be8178f59c6bfae8a1"
+  }
+}

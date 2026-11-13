@@ -34,6 +34,8 @@ class UploadPageTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.env = patch.dict(os.environ, {'SHOPEE_RESULTS_DIR': self.temp.name,
+                                          'SENTILOKAL_EVALUATION_DIR': self.temp.name,
+                                          'SENTILOKAL_RESEARCH_PROFILE': 'legacy',
                                           'SENTILOKAL_RESEARCH_DATA_PATH': str(CLEANED),
                                           'SENTILOKAL_RESEARCH_DATA_SHA256': sha256(CLEANED.read_bytes()).hexdigest() if CLEANED.exists() else '0' * 64})
         self.env.start()
@@ -87,7 +89,7 @@ class UploadPageTests(unittest.TestCase):
         self.assertEqual(self.metrics(app)['Median review length · words'], '1.0')
         self.assertEqual(len(app.get('plotly_chart')), 0)
         self.assertTrue(app.dataframe[0].value['Rating-derived sentiment'].isna().all())
-        self.assertTrue(any('No sentiment classifications have been generated' in item.value for item in app.info))
+        self.assertTrue(any('No rating-derived labels have been generated' in item.value for item in app.info))
 
     def test_clear_removes_upload_and_restores_empty_state(self):
         fixture = FileFixture(RATED)
@@ -103,14 +105,13 @@ class UploadPageTests(unittest.TestCase):
         self.assertNotIn('user_upload_digest', app.session_state)
         self.assertTrue(any('Your analysis starts here' in item.value for item in app.markdown))
 
-    def test_both_modules_show_pending_prediction_without_loading_a_model(self):
-        with patch('dashboard.inference.load_trained_model') as loader:
+    def test_neither_module_loads_a_model_without_an_explicit_prediction_action(self):
+        with patch('dashboard.prediction_backend.load_predictor') as loader:
             app = self.app()
-            self.assertTrue(any('Model prediction feature coming after training' in item.value for item in app.info))
+            self.assertEqual(len(widget(app.selectbox, 'Prediction model').options), 4)
             self.assertEqual(widget(app.selectbox, 'Application module').options, ['Baseus Research Dashboard', 'Upload & Analyze'])
             widget(app.selectbox, 'Application module').set_value('Baseus Research Dashboard').run()
             self.assertNoException(app)
-            self.assertTrue(any('Model prediction feature coming after training' in item.value for item in app.info))
             loader.assert_not_called()
 
     def test_invalid_csv_shows_helpful_message(self):

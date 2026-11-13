@@ -1,0 +1,150 @@
+"""FYP Version B dashboard: four locked architectures, no model fitting/tuning."""
+from pathlib import Path
+import json, hashlib, importlib.util
+import numpy as np
+import pandas as pd
+import streamlit as st
+from xgboost import XGBClassifier
+from transformers import AutoTokenizer, AutoModel, AutoModelForSequenceClassification
+import joblib
+import torch
+
+HERE=Path(__file__).resolve().parent
+st.set_page_config(page_title='Shopee Sentiment | FYP Version B',page_icon='🛍️',layout='wide')
+
+@st.cache_resource(show_spinner=False)
+def assets():
+    cfg=json.loads((HERE/'deployment_config.json').read_text(encoding='utf-8'))
+    assert cfg['dataset']=='Version B CLDR only' and cfg['max_length']==256
+    spec=importlib.util.spec_from_file_location('preprocessv3_cldr_ab',HERE/'preprocessv3_cldr_ab.py')
+    prep=importlib.util.module_from_spec(spec);spec.loader.exec_module(prep)
+    em=prep.load_cldr_map(subset_path=HERE/'cldr_ms_observed_tts.tsv',cldr_dir=None)
+    slang=prep.load_json_map(HERE/'malay_normalization_map_v3.json')
+    slang={k:v for k,v in slang.items() if k.casefold() not in {'padu','mantap','hauk','baguss'}}
+    pattern=prep.compile_normalization_pattern(slang)
+    return cfg,prep,em,slang,pattern
+
+@st.cache_resource(show_spinner='Loading saved classifiers...')
+def classifiers():
+    cfg,_,_,_,_=assets()
+    out={}
+    for name in ('frozen_hybrid','tfidf_xgb','finetuned_hybrid'):
+        m=XGBClassifier();m.load_model(str(HERE/cfg['models'][name]['model_file']))
+        assert list(m.classes_)==[0,1],f'Unexpected labels in {name}'
+        out[name]=m
+    out['vectorizer']=joblib.load(HERE/cfg['models']['tfidf_xgb']['vectorizer_file'])
+    return out
+
+@st.cache_resource(show_spinner='Loading pretrained multilingual DistilBERT...')
+def frozen_encoder():
+    cfg,_,_,_,_=assets()
+    tok=AutoTokenizer.from_pretrained(str(HERE/'saved_tokenizer'),local_files_only=True)
+    mod=AutoModel.from_pretrained(cfg['pretrained_model_id']).eval()
+    device=torch.device('cuda' if torch.cuda.is_available() else 'cpu');mod.to(device)
+    return tok,mod,device
+
+@st.cache_resource(show_spinner='Loading fine-tuned multilingual DistilBERT...')
+def finetuned_encoder():
+    cfg,_,_,_,_=assets()
+    path=HERE/cfg['fine_tuned_checkpoint_folder']
+    tok=AutoTokenizer.from_pretrained(str(path),use_fast=True,local_files_only=True)
+    mod=AutoModelForSequenceClassification.from_pretrained(str(path),local_files_only=True).eval()
+    assert mod.config.num_labels==2
+    device=torch.device('cuda' if torch.cuda.is_available() else 'cpu');mod.to(device)
+    return tok,mod,device
+
+@torch.inference_mode()
+def bert_forward(texts,finetuned=False):
+    cfg,_,_,_,_=assets()
+    tok,model,device=finetuned_encoder() if finetuned else frozen_encoder()
+    feature_chunks=[];score_chunks=[]
+    batch_size=12 if device.type=='cuda' else 4
+    for start in range(0,len(texts),batch_size):
+        enc=tok(texts[start:start+batch_size],truncation=True,padding=True,max_length=cfg['max_length'],return_tensors='pt')
+        enc={k:v.to(device) for k,v in enc.items()}
+        if finetuned:
+            out=model(**enc,output_hidden_states=True,return_dict=True)
+            feature_chunks.append(out.hidden_states[-1][:,0,:].float().cpu().numpy())
+            score_chunks.append(torch.softmax(out.logits.float(),dim=1)[:,0].cpu().numpy())
+        else:
+            feat=model(**enc).last_hidden_state[:,0,:]
+            feature_chunks.append(feat.float().cpu().numpy())
+    features=np.concatenate(feature_chunks).astype(np.float32)
+    scores=np.concatenate(score_chunks) if finetuned else None
+    return features,scores
+
+def run_predictions(raw,model_key):
+    cfg,prep,emoji,slang,pattern=assets()
+    clean=[prep.preprocess_text(str(t),emoji,slang,pattern,preserve_case=True,variant='B') for t in raw]
+    if any(not t.strip() for t in clean):raise ValueError('Preprocessing produced an empty review.')
+    m=classifiers()
+    if model_key=='tfidf_xgb':
+        scores=m[model_key].predict_proba(m['vectorizer'].transform(clean))[:,0]
+    elif model_key=='frozen_hybrid':
+        f,_=bert_forward(clean,False);scores=m[model_key].predict_proba(f)[:,0]
+    else:
+        f,ft_scores=bert_forward(clean,True)
+        scores=ft_scores if model_key=='finetuned_classifier' else m[model_key].predict_proba(f)[:,0]
+    t=float(cfg['models'][model_key]['threshold'])
+    label=np.where(scores>=t,'Negative','Positive')
+    return pd.DataFrame({'original_review':raw,'cleaned_review':clean,'prediction':label,
+                         'negative_score_uncalibrated':scores,'negative_threshold':t})
+
+st.title('Shopee Malaysia · Sentiment Analysis')
+st.caption('Final Year Project | Version B CLDR preprocessing | Four locked research models')
+try:
+    cfg,prep,em,slang,pattern=assets()
+except Exception as exc:
+    st.error('Deployment assets missing or mismatched: '+str(exc));st.stop()
+
+names={'finetuned_hybrid':'Fine-tuned DistilBERT + XGBoost (improved hybrid)',
+       'frozen_hybrid':'Frozen DistilBERT + XGBoost (original hybrid)',
+       'tfidf_xgb':'TF-IDF + XGBoost (proposal baseline 1)',
+       'finetuned_classifier':'Fine-tuned DistilBERT classifier (proposal baseline 2)'}
+choice=st.sidebar.selectbox('Prediction model',list(names),format_func=lambda k:names[k])
+st.sidebar.caption('Every model and threshold was selected using training-only folds. The held-out tests did not change deployment decisions.')
+st.sidebar.write('**Selected negative threshold:**',round(float(cfg['models'][choice]['threshold']),6))
+st.sidebar.write('**Text preprocessing:** Version B CLDR')
+st.sidebar.write('**Max token length:** 256')
+st.sidebar.warning('Model scores are uncalibrated; do not interpret them as confidence percentages.')
+tab1,tab2,tab3,tab4=st.tabs(['Single review','Batch reviews','Dataset overview','Held-out evaluation'])
+with tab1:
+    raw=st.text_area('Enter a Malay, English or mixed-language product review',value='Barang sampai cepat, sound quality bagus 👍')
+    if st.button('Predict sentiment',type='primary'):
+        try:
+            out=run_predictions([raw],choice).iloc[0]
+            (st.error if out.prediction=='Negative' else st.success)('Predicted: '+out.prediction)
+            st.write('**Cleaned text:**',out.cleaned_review)
+            st.metric('Negative-class score (uncalibrated)',f'{out.negative_score_uncalibrated:.4f}')
+            st.caption(f'Negative when score ≥ {out.negative_threshold:.6f}.')
+        except Exception as exc: st.error('Prediction failed: '+str(exc))
+with tab2:
+    uploaded=st.file_uploader('Upload CSV with a review text column',type='csv')
+    if uploaded is not None:
+        df=pd.read_csv(uploaded)
+        column=st.selectbox('Select review column',df.columns.tolist())
+        if st.button('Analyze uploaded reviews'):
+            try:
+                out=run_predictions(df[column].fillna('').astype(str).tolist(),choice)
+                st.dataframe(out.head(200),use_container_width=True)
+                st.download_button('Download predictions CSV',out.to_csv(index=False).encode('utf-8'),'predictions.csv','text/csv')
+            except Exception as exc:st.error('Batch prediction failed: '+str(exc))
+with tab3:
+    p=HERE/'version_B_model_ready.csv'
+    if p.exists():
+        df=pd.read_csv(p,low_memory=False,dtype={'shop_id':'string','item_id':'string'})
+        st.metric('Total reviews',f'{len(df):,}')
+        st.write('**Star-derived labels**');st.bar_chart(df.sentiment.map({0:'Negative',1:'Positive'}).value_counts())
+        st.write('**Language categories**');st.bar_chart(df.language_group.value_counts())
+        st.metric('Products',f'{df.item_id.nunique():,}')
+        st.dataframe(df[['comment','stars','language_group','item_id']].head(150),use_container_width=True)
+        st.caption('Dataset charts display star-derived ground truth, not out-of-sample model predictions.')
+    else:st.info('Optional dataset overview not bundled.')
+with tab4:
+    p=HERE/'day3_all_models_test_metrics.csv'
+    if p.exists():
+        results=pd.read_csv(p)
+        cols=[c for c in ['architecture','split','negative_precision','negative_recall','negative_f1','macro_f1','accuracy','negative_PR_AUC'] if c in results]
+        st.dataframe(results[cols].round(4),use_container_width=True)
+        st.caption('Held-out results are research reporting only; no model or threshold was selected using them.')
+    else:st.info('Final held-out results not yet present.')

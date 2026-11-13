@@ -1,0 +1,9 @@
+architecture,split,actual_negative_pred_negative,actual_negative_pred_positive,actual_positive_pred_negative,actual_positive_pred_positive
+frozen_hybrid,80_20,6,55,37,3664
+frozen_hybrid,70_30,22,49,179,5375
+tfidf_xgb,80_20,24,37,32,3669
+tfidf_xgb,70_30,24,47,64,5490
+finetuned_classifier,80_20,31,30,28,3673
+finetuned_hybrid,80_20,27,34,22,3679
+finetuned_classifier,70_30,27,44,29,5525
+finetuned_hybrid,70_30,26,45,20,5534

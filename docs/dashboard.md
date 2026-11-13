@@ -4,7 +4,7 @@
 
 SentiLokal is a Streamlit exploration dashboard for Malaysian e-commerce review sentiment analytics, developed for the FYP *Sentiment Analysis of Mixed-Language Electronic Product Reviews on Shopee Malaysia Using DistilBERT and XGBoost*.
 
-The project is at **data preprocessing**, before class balancing, training, and evaluation. Current statistics use **star-rating-derived labels**, never model predictions: 1–2 stars → Negative (0), 4–5 stars → Positive (1). Three-star and invalid-rating records are excluded from binary analyses. Customer star ratings are proxy labels and may disagree with the actual comment.
+The completed experiments evaluated four architectures on each of two test splits. Research charts continue to use **star-rating-derived labels**: 1–2 stars → Negative (0), 4–5 stars → Positive (1). Three-star and invalid-rating records are excluded from binary analyses. These proxy labels can disagree with the comment or a model prediction. The Model Performance section imports the genuine eight-record Version B exports; optional upload inference is separate.
 
 ## Run locally
 
@@ -101,13 +101,13 @@ The 17 Shopee listing IDs represent the **five products** below, following the m
 
 Maintain this mapping in `dashboard/products.py`. Known IDs use the supplied product names. Unknown IDs retain a provided source name internally, or an ID-based fallback when no name is present. The presentation layer replaces identifier-derived fallback labels with **Other product** and does not display unmapped IDs. Additional uploads are not silently assigned to one of the five known products. Changes to the mapping invalidate the data cache.
 
-Repeated source review IDs and duplicate records are retained and reported; totals therefore count **source records**, not a claim of deduplicated customers/reviews. The cleaned file has 2,091 repeated-ID occurrences after the first, with no exact duplicate rows. The labelled file has 5,610 repeated-ID occurrences and 4,077 exact duplicate rows. Deduplication or revised research scope belongs in a separate data decision. No balancing, training, inference, or rewriting of the existing preprocessing pipeline occurs.
+Repeated source review IDs and duplicate records are retained and reported; totals count **source records**. The legacy cleaned file has 2,091 repeated-ID occurrences after the first, with no exact duplicate rows. The labelled file has 5,610 repeated-ID occurrences and 4,077 exact duplicate rows. The approved Version B source has 18,705 unique source-row keys. No balancing, training, deduplication, or rewriting of the original preprocessing scripts occurs. Upload inference invokes a separately vendored, checksum-verified copy of the supplied Version B preprocessing code.
 
 ### Upload & Analyze
 
 Choose **Upload & Analyze** from the sidebar **Application module** selector to open its dedicated file uploader. Review text is required; ratings, dates, and products are optional. Supported names are documented on the page. Uploads are parsed without writing files and without Streamlit's global data cache. Each session retains its own parsed records until cleared or the session expires. **Clear Uploaded Dataset** clears the session analysis, filters, filename, and file-selector generation so the old CSV is not immediately reloaded.
 
-The page shows total source rows, available product information, positive/negative counts and percentages among eligible binary ratings, observed dates, charts where the necessary fields exist, and a paginated review explorer. Three-star, invalid-rating, and unrated rows remain available in the explorer with blank binary sentiment. Text-only uploads show descriptive original-comment counts and median word length, with **Model prediction feature coming after training**; they are never classified by keyword heuristics or supplied prediction columns. Unknown product identifiers receive anonymous display labels so distinct products can be compared without exposing their IDs. Existing preprocessing exclusions, when present, are respected.
+The page retains its rating-based statistics, charts, and paginated explorer. Three-star and unrated rows remain visible with blank rating-derived sentiment. Select one of four trained architectures and click **Analyze Reviews** to run an available saved model on every original uploaded row. Text-only CSVs need no ratings for model prediction. A manual single-review input is also available. Genuine outputs add predicted totals, a separate distribution chart, a prediction filter, and export columns. Scores are explicitly uncalibrated; incoming prediction/confidence columns are discarded. Unavailable models show specific setup errors while exploration remains usable.
 
 Upload product/sentiment/date filters apply only to uploaded analysis. Its search and star filters affect its review table and export. No uploaded file, option, or prediction column changes the official research dataset, its filters, or its genuine held-out results. Research source configuration is server-side: `SENTILOKAL_RESEARCH_DATA_PATH` (or legacy `SHOPEE_DATA_PATH` if the new variable is absent), with approved checksum verification. See [deployment.md](deployment.md).
 
@@ -126,15 +126,15 @@ For owner integration, the private schema layer maps these source columns withou
 
 For the **research loader**, product ID, original comment, star rating, and review date columns are required. The separate upload loader requires only original comments. Missing values are counted; invalid dates remain undated. Ambiguous slash dates use month/day/year as in the provided Shopee files. Existing nonempty `preprocess_status` values other than `keep` are respected as exclusions from binary statistics. Existing labels are compared with ratings but do not override the rating-based definition.
 
-`review_id` is a unique canonical source-row identity: unique `cmtid` values are retained, repeated/missing ones receive a stable source-row suffix. These IDs remain private and are excluded from customer CSV downloads. Owners preparing future predictions can obtain the exact dataset's canonical IDs through the read-only local Python example in [model_integration.md](model_integration.md#owner-only-review-key-export). No arbitrary prediction columns in uploaded review CSVs are trusted; prediction results must use the separate validated result contract.
+For the legacy source, `review_id` is a unique canonical identity: unique `cmtid` values are retained, repeated/missing ones receive a stable source-row suffix. Version B uses its separate `version_b:` source-key namespace. These keys remain private. See the [research prediction contract](model_integration.md#research-source-and-saved-predictions). Uploaded CSV prediction claims are discarded; only explicit saved-model analysis can add predictions.
 
-## Future integration
+## Final model integration
 
-See [model_integration.md](model_integration.md) for complete schemas. Place real `evaluation_<model>.json` files and optionally `predictions.csv` in `results/` (or set `SHOPEE_RESULTS_DIR`). The app discovers them on every rerun, so adding results requires no UI rebuild. Invalid files show errors while data exploration remains usable. No sample metrics or predictions are shipped in `results/`.
+See [model_integration.md](model_integration.md) for the active Version B backend, exact negative-score thresholds, artifact requirements, source migration, and verification limits. The supplied two aggregate CSV exports under `evaluation/version_b/` populate Model Performance automatically. Comparisons stay within each test split, emphasize macro and negative F1, and do not select a deployment model using held-out performance.
 
-Evaluation requires an explicit held-out test declaration, test-set identity, and evaluation configuration. Supply test `y_true`/`y_pred` CSVs or consistent recorded metrics plus a confusion matrix and sample count. Baselines must share the test set and evaluation settings. File validation checks structure and numerical consistency; it cannot independently prove that test data was held out during training.
+The legacy `results/` contract is retained for compatibility when no final aggregate report is installed. Current Version B evaluation reporting never runs held-out inference or recomputes metrics from test predictions. It validates aggregate consistency and preserves the recorded values, including negative PR-AUC. Per-review held-out membership was not supplied, so comparison groups rely on the owner's split declarations and consistent support counts.
 
-`dashboard/inference.py` provides an unavailable-by-default prediction service. The lazy `dashboard/model_loader.py` adapter requires an explicit training contract covering the actual saved tokenizer, safetensors encoder, XGBoost JSON/UBJ, exact tokenization/feature/classification settings, artifact hashes, preprocessing code/resources/settings fingerprint, and supported confidence policy. No model dependencies load during Stage 1. Install matching training-time PyTorch/Transformers/XGBoost versions only when integrating actual trained artifacts. The adapter has not been exercised with trained artifacts because none exist yet.
+`dashboard/prediction_backend.py` is the active four-architecture interface. The older `dashboard/inference.py` and `dashboard/model_loader.py` remain independent legacy APIs. Real TF-IDF inference, saved-tokenizer parity, and full-corpus preprocessing parity have been verified locally. The code-only reference confirms CLS features and dynamic padding. Transformer encoder tests use doubles until the original fine-tuned weights and frozen encoder are supplied.
 
 ## Project structure
 
@@ -159,7 +159,13 @@ assets/products/catalog.toml Product-photo filenames and source provenance
 .streamlit/config.toml       Streamlit theme/settings
 data/                        Owner-added approved research input; other CSVs ignored
 results/                     Real future predictions/evaluation files (empty)
-models/                      Future local trained artifacts (empty)
+models/version_b/            Ignored owner-provisioned weights, vectorizer, private CSVs and CLDR XML
+resources/version_b/         Verified preprocessing resources and deployment/source manifests
+evaluation/version_b/        The two genuine aggregate held-out exports
+dashboard/prediction_backend.py Four trained-model adapters and resource cache
+dashboard/prediction_controls.py Session-only batch and single-review inference controls
+dashboard/version_b_research.py Explicit source-ID-based Version B research loader
+dashboard/final_evaluations.py Eight-record aggregate validation without held-out inference
 docs/dashboard.md            Dashboard setup and usage guide
 docs/deployment.md           Private research data provisioning instructions
 scripts/check_research_data.py Read-only research deployment readiness check

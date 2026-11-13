@@ -43,7 +43,7 @@ class AppTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.results = Path(self.temp.name)
-        self.environment = patch.dict(os.environ, {"SHOPEE_RESULTS_DIR": self.temp.name, "SENTILOKAL_RESEARCH_DATA_PATH": str(CLEANED), "SENTILOKAL_RESEARCH_DATA_SHA256": sha256(CLEANED.read_bytes()).hexdigest()})
+        self.environment = patch.dict(os.environ, {"SHOPEE_RESULTS_DIR": self.temp.name, "SENTILOKAL_EVALUATION_DIR": self.temp.name, "SENTILOKAL_RESEARCH_PROFILE": "legacy", "SENTILOKAL_RESEARCH_DATA_PATH": str(CLEANED), "SENTILOKAL_RESEARCH_DATA_SHA256": sha256(CLEANED.read_bytes()).hexdigest()})
         self.environment.start()
         self.original_data_path = os.environ.pop("SHOPEE_DATA_PATH", None)
 

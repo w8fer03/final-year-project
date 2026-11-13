@@ -1,5 +1,11 @@
 # Provision the official research dataset
 
+The final Version B experiment package is integrated separately from the legacy
+source described below. Its two aggregate evaluation exports are included in
+Git. New private Version B CSVs and model weights require owner provisioning.
+See [Version B final research source](#version-b-final-research-source) for the
+explicit migration; no legacy filename/checksum is silently replaced.
+
 The current dashboard branch includes the approved cleaned CSV at
 `data/dataset_preprocessed_v3_clean.csv`, committed by the project owner. There
 is also an owner-added duplicate at the repository root; the app does not read
@@ -93,7 +99,64 @@ For example, calculate that value locally with `sha256sum /path/to/approved.csv`
 or PowerShell's `Get-FileHash -Algorithm SHA256`. Then run the check command
 before restarting the app. Do not change the configured checksum merely to
 suppress a mismatch: first confirm the file is the intended research version.
-No preprocessing, balancing, or training is performed by this application.
+No research-source rewriting, balancing, or training is performed. Optional
+upload inference uses the exact supplied Version B text preprocessing.
+
+## Version B final research source
+
+The approved final source and its date metadata have different, independently
+verified provenance from the legacy cleaned file:
+
+| File | SHA-256 |
+| --- | --- |
+| `version_B_model_ready.csv` | `1f0803d6fcf57b05e4186fda3fd8e4c94233d39a39ad71336a95d147cb3fceb5` |
+| `version_B_dashboard_metadata.csv` | `7d33b56d1fba59a6ab0a6069294b361a65923ee1b3e3b681dffb845e68e495bf` |
+
+Provision both files in an approved private directory alongside the model
+artifacts, for example `/srv/sentilokal/version_b`. Mount it read-only and set:
+
+```bash
+export SENTILOKAL_MODEL_DIR=/srv/sentilokal/version_b
+python scripts/check_version_b.py --research --check-preprocessing
+export SENTILOKAL_RESEARCH_PROFILE=version_b
+streamlit run app.py
+```
+
+In the current prepared workspace these files are already under ignored
+`models/version_b/`; omit the directory override to use them locally. Keep
+`SENTILOKAL_RESEARCH_PROFILE=legacy` (the default), or unset it, to retain the
+original research source. A missing/invalid Version B source shows setup errors
+and never falls back silently to the legacy file. Do not set the legacy source
+checksum variable to the Version B checksum.
+
+Version B preserves the five-product mapping, original comments, and dates.
+Its 18,705 unique `source_row_id` values are joined to the date metadata by key,
+with identical ID sets required; source order and duplicates in comment text
+are retained. All source rows were already approved upstream with 39 phase-1
+exclusions applied. The dashboard performs no additional balancing/eligibility
+changes. The private review-key namespace is `version_b:` and cannot match
+legacy predictions accidentally.
+
+The active research profile is shown on the dashboard. Final evaluation panels
+always identify Version B independently of the current research chart source.
+No whole-research predictions are generated automatically; optional saved
+predictions need the stable-key/provenance contract in
+[model_integration.md](model_integration.md#research-source-and-saved-predictions).
+
+For deployment inference, also provision the saved models/vectorizer and pinned
+CLDR XML. The real TF-IDF artifacts work in this workspace; the three transformer
+choices remain unavailable until their original fine-tuned safetensors weights
+and frozen encoder are supplied. The code-only kit's saved tokenizers are present
+locally, with the verified reference settings included in code. The complete file layout, expected hashes,
+missing-file list, and validation limits are in
+[model_integration.md](model_integration.md#remaining-transformer-requirements).
+No model download occurs when a user opens the app.
+
+`python scripts/check_version_b.py --require-all` fails until all four choices
+have their required artifacts and settings. This checks availability, not actual
+four-model inference parity. It never trains, balances, or re-evaluates held-out
+reviews. Git deployment alone does not carry ignored private files from this
+workspace to a new host.
 
 ## Public fields and source access
 

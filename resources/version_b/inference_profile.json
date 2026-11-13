@@ -1,0 +1,71 @@
+{
+  "reference_file": "reference_dashboard_app.py.txt",
+  "reference_sha256": "e7effaae056964403be43c189d9afb3e7ae202b6d0c40b26afc1129f48d5b54c",
+  "transformers_version": "4.57.6",
+  "artifact_sha256": {
+    "fine_tuned_distilbert_80_20_full_training_only/config.json": "c818dad4102c8b6f88a6bf10a180a4ce22543e8df49ed29dd22de7db94ccbffc",
+    "fine_tuned_distilbert_80_20_full_training_only/special_tokens_map.json": "b6d346be366a7d1d48332dbc9fdf3bf8960b5d879522b7799ddba59e76237ee3",
+    "fine_tuned_distilbert_80_20_full_training_only/tokenizer.json": "365be1735058e689dd4db1fe0cab05549f3283e9eb7097a053bead369e83d695",
+    "fine_tuned_distilbert_80_20_full_training_only/tokenizer_config.json": "91955163d30880d1ef0928cfdd729baaf413401dc4456f3ab1a48b3eec2ec624",
+    "fine_tuned_distilbert_80_20_full_training_only/vocab.txt": "fe0fda7c425b48c516fc8f160d594c8022a0808447475c1a7c6d6479763f310c",
+    "saved_tokenizer/tokenizer.json": "bf1b59b7b11c95f194f51708d918eea378e09d05f84c0e1656dc5180e8117088",
+    "saved_tokenizer/tokenizer_config.json": "9cd988573a9588a6085cd353eeefa09b803dba75b03f58d0c1d302aad3078193"
+  },
+  "frozen_hybrid": {
+    "padding": true,
+    "truncation": true,
+    "add_special_tokens": true,
+    "padding_side": "right",
+    "truncation_side": "right",
+    "encoder_inputs": [
+      "input_ids",
+      "attention_mask"
+    ],
+    "encoder_dtype": "float32",
+    "feature_dtype": "float32",
+    "negative_threshold_comparison": ">=",
+    "pooling": "cls",
+    "cpu_batch_size": 4,
+    "use_fast": true,
+    "tokenizer_path": "saved_tokenizer",
+    "encoder_path": "frozen_distilbert"
+  },
+  "finetuned_classifier": {
+    "padding": true,
+    "truncation": true,
+    "add_special_tokens": true,
+    "padding_side": "right",
+    "truncation_side": "right",
+    "encoder_inputs": [
+      "input_ids",
+      "attention_mask"
+    ],
+    "encoder_dtype": "float32",
+    "feature_dtype": "float32",
+    "negative_threshold_comparison": ">=",
+    "pooling": "cls",
+    "cpu_batch_size": 4,
+    "use_fast": true,
+    "tokenizer_path": "fine_tuned_distilbert_80_20_full_training_only",
+    "encoder_path": "fine_tuned_distilbert_80_20_full_training_only"
+  },
+  "finetuned_hybrid": {
+    "padding": true,
+    "truncation": true,
+    "add_special_tokens": true,
+    "padding_side": "right",
+    "truncation_side": "right",
+    "encoder_inputs": [
+      "input_ids",
+      "attention_mask"
+    ],
+    "encoder_dtype": "float32",
+    "feature_dtype": "float32",
+    "negative_threshold_comparison": ">=",
+    "pooling": "cls",
+    "cpu_batch_size": 4,
+    "use_fast": true,
+    "tokenizer_path": "fine_tuned_distilbert_80_20_full_training_only",
+    "encoder_path": "fine_tuned_distilbert_80_20_full_training_only"
+  }
+}

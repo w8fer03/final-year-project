@@ -1,6 +1,6 @@
 """Module-independent future prediction boundary, disabled in the current UI.
 
-A real trained predictor must be explicitly connected by the owner after training.
+A real trained predictor must be explicitly connected to this legacy service.
 No environment switch, star label, keyword heuristic, or uploaded artifact enables
 predictions. Original rows/text are retained one-to-one, including duplicates.
 """
@@ -13,7 +13,7 @@ import pandas as pd
 from dashboard.model_loader import ModelIntegrationError, PredictionBatch, load_trained_model
 from dashboard.presentation import public_reviews
 
-MODEL_PENDING_MESSAGE = 'Model prediction feature coming after training'
+MODEL_PENDING_MESSAGE = 'Trained-model artifacts are not configured for this inference service.'
 
 
 class ReviewPredictor(Protocol):
@@ -49,5 +49,5 @@ class PredictionService:
 
 
 def load_prediction_service(manifest_path, preprocessing_registry) -> PredictionService:
-    """Owner-only future connection point. Stage 1 deliberately never calls it."""
+    """Legacy owner connection point; the active Version B UI uses its own backend."""
     return PredictionService(load_trained_model(manifest_path, preprocessing_registry))

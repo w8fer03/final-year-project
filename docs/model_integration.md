@@ -1,206 +1,165 @@
-# Future result and model integration
+# Final Version B model integration
 
-SentiLokal – Malaysian E-Commerce Review Sentiment Analytics does not train,
-balance, infer, or download a model during Stage 1. No result files are
-bundled. The dashboard discovers real files under `results/` on each rerun.
-Validation errors are displayed rather than replaced with example results.
+The existing SentiLokal interface now imports the genuine eight-configuration evaluation exports and supports saved-model inference on Upload & Analyze. The yellow/Poppins design, radio section shortcuts, five-product mapping, research charts, and original review display are preserved.
 
-## Historical prediction file
+**Validation is partial:** the actual supplied TF-IDF + XGBoost model loads and runs new text. The code-only kit supplies the reference implementation and saved tokenizers; these are now verified. The other three architecture interfaces have encoder tests with explicit doubles because their actual transformer weights are missing. This is not a claim that all four saved models have been validated.
 
-Save `results/predictions.csv` with columns:
+## Local setup
 
-- `review_id`: private canonical ID obtained through the owner-only local export
-  below. Use the exact selected dataset: original `cmtid` values may repeat and
-  the loader disambiguates these rows. Never join on comment text or row position.
-- `predicted_sentiment`: actual model output, `0`/`1` or `Negative`/`Positive`.
-- `confidence` (optional): actual probability for the selected class in [0, 1].
+Use Python 3.10 or newer, from the existing branch `codex/shopee-sentiment-dashboard`:
 
-IDs must be unique and nonempty. Missing predictions stay missing. The explorer
-reports coverage; prediction-only filtering excludes rows without a prediction.
-Extra IDs are permitted because the source may include records excluded from the
-binary dashboard. Files with no matching IDs are rejected. Uploading a different
-dataset does not authorize a positional prediction join.
-
-### Owner-only review-key export
-
-Customer screens and CSV downloads intentionally exclude `review_id`,
-`source_review_id`, and `product_id`. Do not add an owner export or source-schema
-panel to the public Streamlit pages. An owner can prepare a private local key
-file from the repository root without changing the original dataset:
-
-```python
-from pathlib import Path
-from dashboard.data import load_dataset
-
-dataset = load_dataset(Path("data/dataset_preprocessed_v3_clean.csv"))
-keys = dataset.reviews[
-    ["review_id", "product_id", "product_name", "review_text", "sentiment"]
-].copy()
-destination = Path("outputs/dashboard_review_keys.csv")
-destination.parent.mkdir(parents=True, exist_ok=True)
-keys.to_csv(destination, index=False, encoding="utf-8-sig")
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python scripts/check_version_b.py --research --check-preprocessing --smoke-tfidf
+streamlit run app.py
 ```
 
-`outputs/` and CSV files are ignored by Git. Keep this file owner-only and local;
-it contains source identifiers and review text. The example reads the source and
-writes a separate file, with no balancing, model training, preprocessing rerun,
-or original CSV rewrite. Use the exact source dataset and its stable review IDs
-when generating genuine predictions later. The customer-facing projection in
-`dashboard/presentation.py` continues to exclude these identifiers even after
-validated predictions are joined.
+On Windows use `.venv\Scripts\activate`. For a CPU-only PyTorch installation, use the official PyTorch installation instructions for your host before installing the requirements. No GPU is required by these adapters.
 
-## Held-out evaluation
+`requirements.txt` pins XGBoost 3.4.1 (the supplied JSON save version), scikit-learn 1.6.1 (the saved vectorizer metadata), and regex 2026.5.9 (the recorded preprocessing version). Actual TF-IDF inference was verified with those versions and joblib 1.5.3 on Python 3.12. Transformers is pinned to 4.57.6, as recorded in the supplied checkpoint config, and both saved tokenizers were exercised with tokenizers 0.22.2. PyTorch weights were not available and full transformer inference was not validated. Do not claim encoder compatibility from tokenizer checks or adapter doubles.
 
-Create one `results/evaluation_<model-id>.json` per model. Required fields are
-`model_id`, `model_name`, `test_set_id` (a stable identity for the exact held-out
-samples), `split: "test"`, `held_out: true`, and an `evaluation_config` object
-containing `averaging: "binary"`, `positive_label: 1`, `zero_division: 0`.
-Record additional relevant settings in that object, such as decision threshold.
-Do not describe training or whole-dataset predictions as a held-out evaluation.
+Provision owner-approved files under ignored `models/version_b/`, or set `SENTILOKAL_MODEL_DIR` to an approved local directory. Read-only mounts are supported. Files present in this workspace are not transferred by a Git push.
 
-Choose either input route:
-
-1. Set `predictions_file` to a CSV relative to `results/`, containing nonempty,
-   unique canonical `review_id`, `y_true`, `y_pred`. Metrics and the confusion
-   matrix are calculated from these genuine test outputs with scikit-learn.
-2. Supply recorded `metrics` (`accuracy`, `precision`, `recall`, `f1` as fractions
-   from 0 to 1), `confusion_matrix` in `[[TN, FP], [FN, TP]]` order, and positive
-   integer `n_samples`. Matrix totals and binary metrics must agree (within
-   0.00005); save at least five decimal places. This validates consistency, not
-   the experimental provenance, which the file author must establish.
-
-Optional metadata such as `checkpoint`, `training_split`, `cross_validation`,
-`training_run_id`, and limitations may be retained in the private result files.
-The public page shows a small readable evaluation summary, not raw source or
-artifact identifiers. Baseline
-comparison requires the same test_set_id, sample count, and full evaluation
-configuration. If both inputs include test review IDs, membership must agree.
-Use the same evaluation configuration for all compared models. Scores from
-unrelated papers or different test sets are not experiment results for this app.
-Files alone cannot prove that a held-out set was never used during training.
-
-## Future trained-model interface (disabled now)
-
-The current UI always shows **Model prediction feature coming after training**.
-Neither module calls a model loader or predictor. Supplying files to `models/`
-does not enable a feature automatically, and predictions in uploaded CSV columns
-are not trusted. No normalization pipeline is chosen from the several existing
-preprocessing scripts: the approved training export will be authoritative.
-Those original scripts and normalization resources are not modified here.
-
-`dashboard.inference.PredictionService()` is unavailable by default. Calling it
-without a trained predictor raises `ModelIntegrationError` with the pending
-message; it never returns dummy labels. The future owner-only factory is:
-
-```python
-from dashboard.inference import load_prediction_service
-from dashboard.model_loader import RegisteredPreprocessor
-
-# These names must refer to the exact code/resources/settings exported by training.
-profile = RegisteredPreprocessor(
-    transform=approved_training_preprocess,
-    files=approved_training_files,
-    settings=approved_training_settings,
-)
-service = load_prediction_service(
-    manifest_path,
-    {recorded_preprocessing_id: profile},
-)
-results = service.predict_reviews(uploaded_dataset.records, batch_size=16)
-# In a future UI, expose results using st.dataframe and st.download_button.
+```text
+models/version_b/
+  xgb_tf_idf.json
+  tfidf_vectorizer.joblib
+  xgb_frozen_hybrid.json
+  xgb_finetuned_hybrid.json
+  version_B_model_ready.csv
+  version_B_dashboard_metadata.csv
+  cldr/
+    ms.xml
+    ms_derived.xml
+  # Still required for transformer inference:
+  frozen_encoder_manifest.json       # original frozen revision and checksums
+  saved_tokenizer/                    # tokenizer files supplied in the code-only kit
+  frozen_distilbert/                  # original frozen encoder weights and config
+  fine_tuned_distilbert_80_20_full_training_only/
+    config.json
+    model.safetensors
+    tokenizer_config.json
+    tokenizer.json or vocab.txt       # plus all other saved tokenizer files
 ```
 
-This is an integration example, not code that the current app executes. The
-original `review_text` is passed to the registered callable only inside model
-inference; it remains unchanged in the returned table. No star rating is needed.
-Every input row, including duplicates, is retained in order. No balancing,
-deduplication, review eligibility filtering, or fitting happens during inference.
-If preprocessing cannot produce a string for a row, inference raises an error
-instead of silently dropping it. Future policy for such reviews must be approved
-and match the actual training pipeline.
+Weights, vectorizers, the new private CSVs, and local settings stay ignored by Git. Joblib deserialization is restricted to the owner-supplied vectorizer after its exact deployment SHA-256 is verified. The app does not accept user-uploaded models, execute remote model code, or download Hugging Face weights. Transformer loads use local files, safetensors, and `trust_remote_code=False`.
 
-### Training export contract
+## Reference pipeline and remaining transformer requirements
 
-`dashboard.model_loader.read_model_manifest` requires a local owner-provided JSON
-manifest with these recorded fields. Do not fill them with guesses before training:
+The new `VersionB_Codex_IntegrationKit_CODE_ONLY.zip` supplies the actual `dashboard_app.py`, saved tokenizer files, checkpoint config, and identical deployment/preprocessing/metric exports. Their bytes were checked against the previously supplied files. The reference is retained as text in `resources/version_b/reference_dashboard_app.py.txt`; the application does not import or replace its UI. The derived `inference_profile.json` pins the reference and every supplied tokenizer/config file by SHA-256.
 
-| Field | Meaning |
+The reference establishes dynamic padding (`padding=True`), truncation at 256, fast tokenizers with right padding/truncation, CPU batches of four, float32 features, and **CLS extraction**. The frozen architecture uses `AutoModel.last_hidden_state[:,0,:]`. Both fine-tuned architectures load `AutoModelForSequenceClassification`; the hybrid uses `hidden_states[-1][:,0,:]`, while the standalone model uses softmax over the two logits. The adapter follows those paths and uses inference mode/eval on CPU. No pooling or tokenizer settings remain guessed.
+
+The saved frozen tokenizer is a `BertTokenizerFast` and emits `token_type_ids` by default. Passing all its tensors directly to DistilBERT, as the reference does, is incompatible with DistilBERT's forward signature. The adapter deliberately requests only `input_ids` and `attention_mask`; tests verify that their token IDs/masks exactly match reference tokenization. The fine-tuned tokenizer already uses the DistilBERT input schema. An unrelated Mistral-regex heuristic warning can appear in Transformers 4.57.6; the supplied WordPiece tokenizer is retained unchanged, without an unrecorded regex correction.
+
+Still needed for actual transformer inference:
+
+1. `fine_tuned_distilbert_80_20_full_training_only/model.safetensors`, **541,317,368 bytes**, expected SHA-256 `6c97a6084994017eccfc96a2438a1c5fd29f87677c9c52be8178f59c6bfae8a1`. Its tokenizer/config files are already provisioned locally from the code-only kit.
+2. The original frozen `distilbert/distilbert-base-multilingual-cased` encoder's `config.json` and `model.safetensors`, under `frozen_distilbert/`. The reference downloads a floating model ID and does not record the training revision. To avoid a silent replacement, provision the actual original encoder and record its revision/checksums in `frozen_encoder_manifest.json`.
+
+The frozen manifest must contain `pretrained_model_id` equal to the deployment config, the owner-approved original `revision`, and `artifact_sha256` entries for `config.json` and `model.safetensors`. No invented revision or checksum is supplied. This is an explicit local provenance control in place of the reference's runtime network download.
+
+```bash
+python scripts/check_version_b.py --require-all
+```
+
+This checks file/config availability, not actual four-model inference parity. It currently exits nonzero because the transformer weights are absent. Research and rating-based upload exploration remain usable. After provisioning, verify cleaned text, tokens, embeddings/logits, scores and labels against a non-held-out batch from the original pipeline. Do not run held-out datasets again.
+
+## Decision semantics and uploaded reviews
+
+`0 = Negative`, `1 = Positive`. The backend verifies class ordering and extracts **P(Negative)**. A score greater than or equal to the architecture's full-precision threshold produces class 0; otherwise class 1. Thresholds come from the supplied deployment configuration, not held-out result selection:
+
+| Architecture | Negative-score threshold |
 | --- | --- |
-| `schema_version` | `1`, the supported contract version |
-| `model_id`, `checkpoint` | Actual trained run and DistilBERT checkpoint identities |
-| `preprocessing_id` | Explicit registered approved preprocessing profile |
-| `preprocessing_fingerprint` | Hash of the exact normalization code, resource files, and settings |
-| `tokenizer_path`, `encoder_path`, `classifier_path` | Saved local tokenizer/encoder directories and XGBoost JSON/UBJ file |
-| `artifact_sha256` | Exact relative filename-to-SHA-256 inventory of all tokenizer, encoder and classifier files |
-| `max_length` | Training sequence length, within the DistilBERT limit |
-| `tokenizer_settings` | Explicit `padding` (`longest`, `max_length`, or false), boolean `truncation` and `add_special_tokens`, and saved `padding_side` / `truncation_side` |
-| `encoder_inputs` | Tensors passed during training: `input_ids`, optionally with `attention_mask` |
-| `encoder_dtype`, `feature_dtype` | Actual encoder precision and classifier feature precision |
-| `pooling` | Recorded first-token `cls` or attention-mask `mean` extraction |
-| `label_mapping` | `{"0": "Negative", "1": "Positive"}` |
-| `classification` | Actual objective, prediction method, and optional confidence policy |
-| `library_versions` | Exact installed versions of torch, transformers, tokenizers, and xgboost used in training |
+| Frozen hybrid | `0.07502188896358628` |
+| TF-IDF + XGBoost | `0.28` |
+| Standalone fine-tuned DistilBERT | `0.060000000000000005` |
+| Fine-tuned hybrid | `0.26` |
 
-`preprocessing_fingerprint(files, settings)` is the shared export/validation
-helper. `files` maps stable logical names to the actual pipeline code and all
-approved Malay-English normalization maps, emoji maps, and other resources that
-the callable uses. `settings` records the exact normalization/case policies and
-other preprocessing choices. At integration time, `RegisteredPreprocessor` must
-supply those same logical names, file bytes, settings, and the actual callable.
-The adapter verifies the fingerprint before importing optional model libraries.
-It never executes a Python file supplied by a model manifest.
+The configured default remains `finetuned_hybrid`, even while its artifacts are unavailable. The app never substitutes another model automatically. Select TF-IDF explicitly to use the model currently available locally. The default and thresholds are owner-recorded training-only CV choices; held-out scores do not tune them. Scores retain their model's native precision during the NumPy comparison, including float32 boundary behavior, to match the supplied reference exactly.
 
-The saved tokenizer's padding and truncation sides must match the manifest.
-Tokenization uses the explicit saved settings, with PyTorch tensors and no token
-type IDs (DistilBERT does not accept them). Attention masks are available for
-mask-aware mean pooling, but are passed to the encoder only when recorded in
-`encoder_inputs`. Encoder precision and conversion to the recorded feature dtype
-are explicit. The classifier's feature dimension, objective and class order must
-match the contract. Unsupported architectures, feature transformations or pooling
-rules need a deliberate adapter; they are never approximated.
+Select a model, upload CSV, and click **Analyze Reviews**. A manual input is under **Analyze one review**. Only original text enters the model. Ratings, existing labels, source IDs, and uploaded prediction columns are not features. Every original row, including duplicates and unrated rows, is processed in order, before display filters. Empty-after-preprocessing reviews reject the batch with an explicit error; no rows disappear silently.
 
-### Classification and optional confidence
+Outputs add `predicted_label`, `predicted_sentiment`, `negative_score`, `prediction_model`, and `negative_threshold`. Rating-derived `sentiment` remains separate and blank without eligible ratings. Negative scores are uncalibrated, never presented as confidence percentages. Product/date/rating-label selections control the predicted summary; the explorer additionally supports text/star/prediction filters and exports all matching rows.
 
-`classification.method` must be either:
+Uploaded content/results stay in session memory, never in a global text cache or project files. A file/model/artifact identity change invalidates old outputs. **Clear Uploaded Dataset** removes batch/manual results and controls. Only model resources are shared through `st.cache_resource`, keyed by artifact/resource identity.
 
-- `predict`: use the saved classifier's `predict`, with no added threshold.
-- `probability_threshold`: use the actual training decision threshold, recorded
-  as `classification.decision_threshold` in (0, 1).
+## Exact Version B preprocessing
 
-`classification.objective` must match the saved model. The adapter supports
-`binary:logistic` and label-only `binary:hinge`. Probability thresholding and
-probability confidence require `binary:logistic` and a working `predict_proba`.
-`classification.confidence` must explicitly be `none` or
-`predicted_class_probability`. Probabilities must be finite binary distributions;
-they are not claims of held-out accuracy or probability calibration. Confidence
-is omitted entirely when unsupported, not filled with zeros, stars, or scores
-from another classifier.
+The original repository preprocessing scripts are unchanged. A byte-identical copy of the supplied `preprocessv3_cldr_ab.py` is vendored under `resources/version_b/`, alongside the exact normalization map, corpus emoji subset, CLDR manifest, and deployment config. Resource hashes are checked before import. Its guarded CLI is not run.
 
-`HybridModel.predict` returns `PredictionBatch(labels, confidence=None)` with
-binary integers and optional actual selected-class probabilities. The service
-validates row counts and output values, then returns public review fields plus
-`predicted_label` (0/1), `predicted_sentiment`, and optional `confidence`. CSV
-prediction columns supplied by a caller are discarded. A future single-review
-text box can call the same service with one `review_text` row.
+Inference calls the exact Version B function with case preserved and the same Version B normalization exclusions (`padu`, `mantap`, `hauk`, `baguss`), using the recorded regex grapheme backend. It performs no new eligibility filtering, balancing, deduplication, fitting, or training.
 
-### Activation after training
+The observed TSV covers 341 canonical emoji sequences, not all future user text. For new corpora provision the two full official Malay CLDR XML files in `cldr/`. Their Git blob SHA-1 pins must match the supplied manifest:
 
-1. Finish and approve training separately, preserving the actual preprocessing
-   source, normalization files, tokenizer, trained encoder, classifier and settings.
-2. Save local artifacts, hashes, preprocessing fingerprint and matching library
-   versions. Encoder weights must be safetensors; pickle/joblib and remote custom
-   code are unsupported. All model artifacts must stay inside the manifest directory.
-3. Register the exact callable and verified files/settings in trusted application
-   code. Install the training versions of optional ML packages separately.
-4. Verify identical embeddings and labels on a known training-export reference
-   batch before connecting `load_prediction_service` to the upload UI. None of the
-   current synthetic contract tests proves parity with unavailable trained weights.
-5. Add genuine prediction display/download, retaining original text and separate
-   rating-derived labels. Cache resources by manifest/artifact/preprocessing
-   identity if needed; do not cache private uploaded text across sessions.
-6. Publish only genuine held-out evaluation files through the independent
-   evaluation contract above. Uploaded inference batches are never evaluation sets.
+- `ms.xml`: `5d04da416ab5e3e05a2262b5b2aff1bb773bcc90`
+- `ms_derived.xml`: `dbf09d6c11b2904f7cfc97050ea0298210e917f5`
 
-No genuine model parity or accuracy has been tested because trained artifacts do
-not exist yet. Hash and configuration validation detect mismatches; the training
-owner must still establish artifact provenance and approve the inference policy.
+The files in this workspace were downloaded from Unicode's official repository and checked against these pins. A fresh host needs the same files. Fetch the pinned Git blobs through GitHub's `unicode-org/cldr` Git database API, decode the returned base64 content, verify the Git blob hash (`SHA1(b"blob " + byte_length + NUL + content)`), and install them under the names above. Do not rely on an unverified future `main` download. Without full files the app rejects an emoji outside the verified corpus subset rather than introducing an unrecorded name. There are no runtime network downloads.
+
+Actual preprocessing parity on all 18,705 supplied original comments produced **zero differences** from `cleaned_comment`, both with the observed subset and the pinned full XML. This check does not classify or re-evaluate a held-out set.
+
+## Research source and saved predictions
+
+The legacy 19,295-review source/checksum remains the default. The final approved Version B source contains 18,705 rows (18,423 positive rating labels, 282 negative), with all 17 listing keys mapping to the existing five products. Its separate date metadata joins one-to-one on `source_row_id`. Namespace `version_b:` prevents collisions with legacy review keys. Neither review text nor row position is used for joins.
+
+Switch explicitly using [deployment.md](deployment.md#version-b-final-research-source). Do not rename the Version B file to the legacy filename or alter the legacy checksum. Source hashes, exact row count, unique IDs, metadata ID-set equality, labels, and known product mapping are checked. Source-row IDs, listing/shop IDs, and cleaned text stay outside public tables/exports.
+
+No whole-research prediction file was supplied or manufactured. Optional owner-generated `research_predictions.csv` in the private model directory requires `source_row_id` and genuine `predicted_sentiment` (`0`/`1` or Negative/Positive). A companion `research_predictions_manifest.json` must contain:
+
+- `training_source_sha256`: the approved Version B source hash.
+- `predictions_sha256`: the actual prediction file hash.
+- `architecture`: one of the four deployment keys.
+- `negative_threshold`: that architecture's exact deployment threshold.
+
+IDs must be unique, nonempty, and a subset of the verified Version B source. Partial coverage remains partial. Legacy `results/predictions.csv` never crosses into the Version B namespace. The legacy source retains its original ID-based prediction contract: owners may obtain canonical `review_id` values locally with `dashboard.data.load_dataset(...).reviews`; customer exports intentionally omit them.
+
+## Recorded held-out results
+
+The exact supplied `day3_all_models_test_metrics.csv` and `day3_all_models_confusion.csv` are committed under `evaluation/version_b/`. They contain aggregate results, not private review rows or weights. `SENTILOKAL_EVALUATION_DIR` optionally selects a server directory containing the same two filenames.
+
+The loader requires eight unique architecture/split pairs, finite metrics, integer counts, matching confusion/support totals, and aggregate arithmetic consistency. It **displays the recorded values**, including PR-AUC; it does not run held-out inference or reconstruct PR-AUC from a confusion matrix. Comparison tables/charts stay within 80:20 (3,762 tests, 61 actual negatives) or 70:30 (5,625 tests, 71 actual negatives). Per-review test membership was not supplied; exact membership is not inferred from counts. Provenance and the owner's held-out declaration remain separate from numerical consistency checks.
+
+Macro F1 and minority negative F1 lead the metric cards, followed by positive/weighted F1, accuracy, negative precision/recall, and negative PR-AUC. A selected recorded confusion matrix and original aggregate CSV downloads are provided. No test-score winner is selected for deployment.
+
+The older `dashboard/inference.py`, `dashboard/model_loader.py`, and `results/` API remain for compatibility, separate from this active Version B path. If the final aggregate files are absent, legacy recorded evaluation JSON is still supported. The current Version B path never uses the legacy option that recalculates metrics from test prediction rows.
+
+## Verification and changed files
+
+Run `python -m unittest discover -s tests -v`. Tests cover the eight genuine exports, malformed/missing results, safe research joins/provenance, exact cleaned-text parity, real saved-tokenizer parity (including 256-token truncation), threshold direction/ties/class ordering, all four adapter interfaces against the reviewed reference functions with explicit doubles, row/duplicate preservation, missing artifacts, resource caching, upload actions/filter/export, navigation, and existing research behavior. Real TF-IDF tests are separately named and skipped on hosts without private artifacts. Transformer doubles are not evidence of actual saved-model validation.
+
+| Modified or added file | Purpose |
+| --- | --- |
+| `app.py` | Final evaluation rendering and explicit research profile; existing page layout retained |
+| `dashboard/upload_page.py` | Connect existing upload exploration to explicit inference, filters/export, session clearing |
+| `dashboard/prediction_controls.py` | Model availability/selection, batch/manual actions, prediction totals/distribution |
+| `dashboard/prediction_backend.py` | Four architecture adapters, class-zero thresholds, verified local loading and resource cache |
+| `dashboard/version_b.py` | Shared artifact locations, config semantics and checksum/path helpers |
+| `dashboard/version_b_preprocessing.py` | Exact verified Version B preprocessing adapter and pinned CLDR handling |
+| `dashboard/version_b_research.py` | Explicit source/metadata migration and provenance-bound saved prediction joins |
+| `dashboard/final_evaluations.py` | Eight-configuration aggregate loading/validation, without test inference |
+| `dashboard/artifacts.py` | Preserve the legacy API while allowing final-report deployments to skip legacy metric recalculation |
+| `dashboard/performance_page.py` | Existing performance section extended with final split comparisons and metrics |
+| `dashboard/inference.py` | Update obsolete pre-training message in the retained legacy service |
+| `requirements.txt` | Inference dependencies; tested serialization/preprocessing pins |
+| `.gitignore` | Allow only small public manifests/resources and two aggregate result CSVs; new data/weights ignored |
+| `resources/version_b/deployment_config.json` | Unchanged supplied model configuration, thresholds and artifact hashes |
+| `resources/version_b/preprocessv3_cldr_ab.py` | Unchanged supplied preprocessing source; existing scripts untouched |
+| `resources/version_b/malay_normalization_map_v3.json` | Unchanged supplied training normalization map |
+| `resources/version_b/CLDR_reference_manifest.json` | Unchanged supplied preprocessing provenance and CLDR pins |
+| `resources/version_b/cldr_ms_observed_tts.tsv` | Unchanged supplied corpus emoji-name subset |
+| `resources/version_b/inference_profile.json` | Reference-derived inference settings and saved tokenizer/config checksums |
+| `resources/version_b/reference_dashboard_app.py.txt` | Unchanged supplied reference retained as text; its UI is not imported |
+| `resources/version_b/research_manifest.json` | Approved Version B dataset/metadata hashes, row count, key namespace and eligibility |
+| `evaluation/version_b/day3_all_models_test_metrics.csv` | Unchanged genuine eight-record metric export |
+| `evaluation/version_b/day3_all_models_confusion.csv` | Unchanged genuine eight-record confusion export |
+| `scripts/check_version_b.py` | Read-only availability, source/parity checks and optional new-text TF-IDF smoke |
+| `tests/test_version_b.py` | Genuine aggregate, exact preprocessing and source/provenance tests |
+| `tests/test_prediction_backend.py` | Reference adapter doubles plus separately named real TF-IDF/tokenizer checks |
+| `tests/test_final_app.py` | Final evaluation UI, upload prediction/filter/export and explicit Version B profile checks |
+| `tests/test_app.py`, `tests/test_upload_page.py`, `tests/test_deployment.py` | Preserve legacy regression isolation and update outdated pre-training expectations |
+| `README.md`, `docs/dashboard.md`, `docs/deployment.md`, `docs/model_integration.md` | Current behavior, setup, source migration, limits and this file inventory |
+
+The existing original datasets and preprocessing scripts are unchanged. No training, class balancing, threshold tuning, or held-out classifier evaluation was run.

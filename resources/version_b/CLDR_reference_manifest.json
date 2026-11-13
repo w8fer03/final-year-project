@@ -1,0 +1,38 @@
+{
+  "study": "FYP Object 2: Malay-English Shopee electronic product reviews",
+  "generated_utc": "2026-11-12/13 (verified run, local Malaysian date 2026-11-13)",
+  "method": "Unicode CLDR ms tts literal names; complete grapheme (regex; Python emoji optional) ",
+  "review_source_filename": "original_18744_source.csv",
+  "eligible_reviews": 18705,
+  "excluded_phase1": 39,
+  "emoji_occurrences_original": 10572,
+  "mapped": 10571,
+  "unmapped": 1,
+  "CLDR_malay_annotations_git_blob_sha1": "5d04da416ab5e3e05a2262b5b2aff1bb773bcc90",
+  "CLDR_malay_derived_annotations_git_blob_sha1": "dbf09d6c11b2904f7cfc97050ea0298210e917f5",
+  "CLDR_official_sources": [
+    "https://github.com/unicode-org/cldr/blob/main/common/annotations/ms.xml",
+    "https://github.com/unicode-org/cldr/blob/main/common/annotationsDerived/ms.xml"
+  ],
+  "official_XML_bundled": false,
+  "observed_corpus_subset_only": true,
+  "CLDR_map_entries_canonical": 341,
+  "note": "This map contains only canonical emoji sequences observed in the eligible dataset. For any new corpus, download and use the full pinned CLDR XML files.",
+  "runtime_emoji_backend": "regex grapheme fallback (emoji Python module unavailable in offline execution environment)",
+  "sha256": {
+    "all_reviews_language_final_working.csv": "84397e6527c78f670cf3199665b13dea77588f22f5906b27a3832f9bf2edc7c4",
+    "original_18744_source.csv": "84397e6527c78f670cf3199665b13dea77588f22f5906b27a3832f9bf2edc7c4",
+    "cldr_ms_observed_tts.tsv": "800f1db17e59a21ac070da0053c9fd556a15891d3fe31e93261f598c43f332ac",
+    "preprocessv3_cldr_ab.py": "3e7e2b74ee7f3e08e917ea05c2cce93e8fbe8a468c7cc72f554b0f1333a9d360",
+    "malay_normalization_map_v3.json": "181ba81d1a2ba3305aa4e53eb3aad3c75a275ceeea4d89b8fa231965f156efa9",
+    "emoji_map_baseline_original.json": "d8a88fe1d6b0f06a72f2f6d772baf41a19726ab0b5c4b9113750aefca2d32176",
+    "version_A_cldr_clean.csv": "13a795bfe68e4651ce8ff0b0b1241c71a45ea2486eb54cc0c645e464ae9d27ad",
+    "version_B_cldr_clean.csv": "ec62c3706b28d94fa09a05c3056df0500efac653694b525507f5cd9d77c660ae"
+  },
+  "execution_versions": {
+    "python": "3.13.5",
+    "pandas": "2.2.3",
+    "regex": "2026.5.9",
+    "emoji": "not available in sandbox (regex fallback used)"
+  }
+}

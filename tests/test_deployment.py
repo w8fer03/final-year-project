@@ -22,7 +22,7 @@ class FreshDeploymentTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.checkout = Path(self.temp.name) / 'code-only-checkout'
         self.checkout.mkdir()
-        for name in ['app.py', 'dashboard', 'assets', '.streamlit', 'scripts']:
+        for name in ['app.py', 'dashboard', 'assets', '.streamlit', 'scripts', 'resources', 'evaluation']:
             source = ROOT / name
             target = self.checkout / name
             if source.is_dir():
@@ -30,6 +30,8 @@ class FreshDeploymentTests(unittest.TestCase):
             else:
                 shutil.copy2(source, target)
         self.env = dict(os.environ)
+        self.env['SENTILOKAL_EVALUATION_DIR'] = self.temp.name
+        self.env['SENTILOKAL_RESEARCH_PROFILE'] = 'legacy'
         for key in ['SENTILOKAL_RESEARCH_DATA_PATH', 'SENTILOKAL_RESEARCH_DATA_SHA256', 'SHOPEE_DATA_PATH', 'SHOPEE_RESULTS_DIR']:
             self.env.pop(key, None)
 

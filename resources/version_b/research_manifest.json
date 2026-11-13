@@ -1,0 +1,12 @@
+{
+  "profile": "version_b_cldr",
+  "expected_rows": 18705,
+  "id_column": "source_row_id",
+  "review_id_namespace": "version_b:",
+  "dataset_file": "version_B_model_ready.csv",
+  "dataset_sha256": "1f0803d6fcf57b05e4186fda3fd8e4c94233d39a39ad71336a95d147cb3fceb5",
+  "metadata_file": "version_B_dashboard_metadata.csv",
+  "metadata_sha256": "7d33b56d1fba59a6ab0a6069294b361a65923ee1b3e3b681dffb845e68e495bf",
+  "eligibility": "Owner-approved Version B model-ready rows, 39 phase-1 exclusions already applied; no new exclusions or balancing",
+  "preprocessing_reference": "CLDR_reference_manifest.json"
+}

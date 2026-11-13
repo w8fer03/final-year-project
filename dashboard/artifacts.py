@@ -223,7 +223,7 @@ def comparable_evaluations(evaluations: list[EvaluationResult], reference: Evalu
     return [item for item in evaluations if compatible(item)]
 
 
-def load_results(results_dir: str | Path) -> ResultsBundle:
+def load_results(results_dir: str | Path, *, include_evaluations: bool = True) -> ResultsBundle:
     """Discover evaluation*.json and predictions.csv; invalid files remain visible.
 
     Missing artifacts are an ordinary empty state. A malformed existing artifact
@@ -236,7 +236,7 @@ def load_results(results_dir: str | Path) -> ResultsBundle:
     if not directory.is_dir():
         bundle.errors.append("Results path must be a directory.")
         return bundle
-    for path in sorted(directory.glob("evaluation*.json")):
+    for path in sorted(directory.glob("evaluation*.json")) if include_evaluations else []:
         try:
             result = load_evaluation(path)
             if any(old.model_id == result.model_id for old in bundle.evaluations):

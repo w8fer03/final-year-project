@@ -49,3 +49,13 @@ models/*
 !models/.gitkeep
 *.log
 
+# Small approved deployment metadata, normalization resources and aggregate results.
+# Private Version B CSVs, vectorizers and weights remain under ignored models/.
+!resources/version_b/deployment_config.json
+!resources/version_b/CLDR_reference_manifest.json
+!resources/version_b/malay_normalization_map_v3.json
+!resources/version_b/research_manifest.json
+!resources/version_b/inference_profile.json
+!evaluation/version_b/day3_all_models_test_metrics.csv
+!evaluation/version_b/day3_all_models_confusion.csv
+

@@ -19,7 +19,10 @@ from dashboard.presentation import public_product_name, public_reviews
 from dashboard.products import PRODUCT_GROUPS, PRODUCT_NAMES
 from dashboard.research import DEFAULT_FILENAME, ResearchDataError, read_research_source
 from dashboard.research_view import dashboard_research_dataset
-from dashboard.inference import MODEL_PENDING_MESSAGE
+from dashboard.final_evaluations import load_final_evaluations
+from dashboard.performance_page import render_final_performance
+from dashboard.version_b import EVALUATIONS, VersionBError
+from dashboard.version_b_research import load_version_b_research, load_version_b_predictions
 from dashboard.upload_page import remember_upload_controls, render_upload_page
 
 ROOT = Path(__file__).resolve().parent
@@ -386,10 +389,17 @@ def render_explorer(df, results):
 
 def render_performance(results):
     st.subheader("Model Performance")
-    st.info(MODEL_PENDING_MESSAGE)
+    try:
+        report = load_final_evaluations(Path(os.environ.get("SENTILOKAL_EVALUATION_DIR", EVALUATIONS)))
+    except VersionBError as exc:
+        st.warning(str(exc))
+        report = None
+    if report is not None:
+        render_final_performance(report)
+        return
     st.caption("Held-out evaluation · Negative = 0 · Positive = 1 · F1-score is the primary project metric")
     if not results.evaluations:
-        empty("Evaluation results are not available yet", "No genuine held-out evaluation results have been supplied. The project is currently in data preprocessing. Valid held-out results will appear here once they are added.")
+        empty("Evaluation results are not available yet", "The recorded evaluation files are not installed in this deployment. Valid held-out results will appear here once they are supplied.")
         st.markdown("#### Evaluation metrics")
         st.info("Accuracy, precision, recall, and F1-score are pending held-out test evaluation.")
         st.markdown("#### Confusion matrix")
@@ -415,16 +425,14 @@ def render_performance(results):
         if len(compatible) > 1:
             metric = st.selectbox("Comparison metric", ["f1", "accuracy", "precision", "recall"])
             plot(charts.metric_comparison(compatible, metric=metric), "performance_comparison")
-            best_score = max(e.metrics['f1'] for e in compatible)
-            best_names = ", ".join(e.model_name for e in compatible if e.metrics['f1'] == best_score)
-            st.write(f"Highest recorded F1-score in this comparable group: **{best_names}** ({best_score:.3f}).")
+            st.caption("This is a descriptive comparison of recorded test results; it does not select or tune a deployment model.")
         else:
             st.info("Baseline model evaluation results are not available for the same test set and evaluation configuration.")
     with st.expander("How to read these metrics"):
         st.write("F1-score balances precision and recall for the positive class. Precision measures how many positive predictions are correct; recall measures how many actual positives were found. Accuracy measures the share of all correct predictions and can hide errors on a minority class.")
         st.caption("Star-rating labels are proxies, not independently verified text sentiment. Results reflect only the supplied held-out set; class balancing and training are outside this dashboard.")
     with st.expander("About the proposed model"):
-        st.write("Proposed architecture: DistilBERT contextual features → XGBoost binary classifier. No trained checkpoint, pooling method, split ratio, or cross-validation configuration is assumed.")
+        st.write("The completed study evaluated frozen and fine-tuned DistilBERT hybrids, TF-IDF + XGBoost, and standalone fine-tuned DistilBERT. Install the recorded final CSV exports to view their results.")
         st.caption("Evaluation and prediction features become available when genuine trained-model results have been supplied.")
 
 
@@ -461,27 +469,41 @@ def main():
         section_anchor("Home")
         render_home()
     st.divider()
-    results = load_results(Path(os.environ.get("SHOPEE_RESULTS_DIR", ROOT / "results")))
+    profile = os.environ.get("SENTILOKAL_RESEARCH_PROFILE", "legacy")
+    final_directory = Path(os.environ.get("SENTILOKAL_EVALUATION_DIR", EVALUATIONS))
+    final_exports_installed = any((final_directory / filename).exists() for filename in ("day3_all_models_test_metrics.csv", "day3_all_models_confusion.csv"))
+    # The Version B report is read from aggregate exports. Legacy evaluation
+    # loading may calculate metrics from test CSVs, so skip it on this path.
+    results = load_results(Path(os.environ.get("SHOPEE_RESULTS_DIR", ROOT / "results")), include_evaluations=not final_exports_installed and profile == "legacy")
     content = None
     name = DEFAULT_FILENAME
     source_error = None
     with st.sidebar:
         st.divider()
         st.markdown('<div class="sidebar-label">RESEARCH DATA</div>', unsafe_allow_html=True)
-    try:
-        research_source = read_research_source(ROOT)
-        content = research_source.content
-        name = research_source.path.name
-    except ResearchDataError as exc:
-        source_error = str(exc)
     dataset = None
-    if content is not None:
-        try:
+    try:
+        if profile == "version_b":
+            dataset = load_version_b_research()
+            name = "version_b_cldr"
+            # Legacy CSV predictions never cross into the Version B namespace.
+            results.predictions = None
+            try:
+                results.predictions = load_version_b_predictions()
+            except VersionBError as exc:
+                results.errors.append(str(exc))
+        elif profile == "legacy":
+            research_source = read_research_source(ROOT)
+            content, name = research_source.content, research_source.path.name
             dataset = cached_dataset(content, name, tuple(sorted(PRODUCT_NAMES.items())))
-        except (ValueError, OSError, UnicodeError, pd.errors.ParserError):
-            source_error = "The configured research file could not be read. The project owner must provide the approved processed CSV with products, original comments, star ratings, and review dates."
+        else:
+            raise VersionBError("Research profile must be legacy or version_b; no automatic source substitution is allowed.")
+    except (ResearchDataError, VersionBError) as exc:
+        source_error = str(exc)
+    except (ValueError, OSError, UnicodeError, pd.errors.ParserError):
+        source_error = "The configured research file could not be read. Restore the approved source and metadata before continuing."
     with st.sidebar:
-        st.caption("Official cleaned Shopee Malaysia dataset · Loaded automatically" if dataset is not None else "Official research dataset · Setup required")
+        st.caption(("Version B CLDR · Explicitly configured research source" if profile == "version_b" else "Original cleaned dataset · Legacy research source") if dataset is not None else "Official research dataset · Setup required")
     if dataset is None:
         for destination, key in [("Dashboard Overview", "overview"), ("Product Sentiment Analysis", "products"), ("Customer Review Explorer", "explorer")]:
             with st.container(key=f"section_{key}"):
@@ -530,10 +552,11 @@ def main():
         include_undated = st.checkbox("Include undated reviews", value=True, key=f"undated_{name}")
         st.caption("Undated records can appear in totals but are omitted from trends.")
         st.divider()
-        st.markdown('<div class="sidebar-footnote"><strong>FYP research workspace</strong><br>Historical review analysis<br>DistilBERT + XGBoost · Integration pending</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-footnote"><strong>FYP research workspace</strong><br>Historical review analysis<br>Four trained architectures · Version B results</div>', unsafe_allow_html=True)
     filtered = filter_reviews(df, product_names=products, sentiments=sentiments, start=start, end=end, include_undated=include_undated)
     with st.container(key="section_overview"):
         section_anchor("Dashboard Overview")
+        st.caption("Research source: Version B CLDR (approved final research dataset)." if profile == "version_b" else "Research source: original cleaned dataset. The final experiment results below refer to the separate Version B CLDR dataset.")
         st.markdown('<div class="status-note"><span class="status-badge">DATA EXPLORATION</span><span>Sentiment uses star ratings: <b>1–2★ Negative</b> · <b>4–5★ Positive</b>. Model predictions are separate.</span></div>', unsafe_allow_html=True)
         selected_dates = filtered.review_date.dropna()
         period = f"{selected_dates.min():%d %b %Y} – {selected_dates.max():%d %b %Y}" if len(selected_dates) else "No dated reviews selected"
